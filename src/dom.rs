@@ -1,4 +1,4 @@
-use std::collections::{HashMap,HashSet};
+use std::collections::{HashMap};
 use std::fmt;
 
 #[derive(Debug)]
@@ -8,6 +8,14 @@ enum NodeType {
 }
 
 #[derive(Debug)]
+struct ElementData {
+    tag_name: String,
+    attributes: AttrMap,
+}
+
+pub type AttrMap = HashMap<String, String>;
+
+#[derive(Debug)]
 pub struct Node {
     pub children: Vec<Node>,
     node_type: NodeType,
@@ -15,12 +23,12 @@ pub struct Node {
 
 impl fmt::Display for Node {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.print(0))
+        write!(f, "{}", self.pretty_print(0))
     }
 }
 
 impl Node {
-    fn print(&self, depth: usize) -> String {
+    fn pretty_print(&self, depth: usize) -> String {
         let tag = match self.node_type {
             NodeType::Text(_) => "Text".to_string(),
             NodeType::Element(ref elem) => elem.tag_name.clone()
@@ -32,20 +40,12 @@ impl Node {
         let mut children_output = String::new();
         let next_depth = depth + 1;
         for child in &self.children {
-            children_output += child.print(next_depth).as_str();
+            children_output += child.pretty_print(next_depth).as_str();
             children_output += "\n";
         }
         return indent + tag.as_str() + "\n" + children_output.as_str();
     }
 }
-
-#[derive(Debug)]
-struct ElementData {
-    tag_name: String,
-    attributes: AttrMap,
-}
-
-pub type AttrMap = HashMap<String, String>;
 
 
 pub fn text(data: String) -> Node {
