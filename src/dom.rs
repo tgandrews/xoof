@@ -31,7 +31,23 @@ impl Node {
     fn pretty_print(&self, depth: usize) -> String {
         let tag = match self.node_type {
             NodeType::Text(_) => "Text".to_string(),
-            NodeType::Element(ref elem) => elem.tag_name.clone()
+            NodeType::Element(ref elem) => {
+                let mut output = elem.tag_name.clone();
+                output.push_str(" {");
+                let mut first = true;
+                for (k, v) in &elem.attributes {
+                    if !first {
+                        output.push_str(", ");
+                    }
+                    output.push_str(k);
+                    output.push_str(": \"");
+                    output.push_str(v);
+                    output.push_str("\"");
+                    first = false;
+                }
+                output.push_str("}");
+                output
+            }
         };
         let mut indent = String::new();
         for _ in 0..depth {
