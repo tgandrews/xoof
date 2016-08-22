@@ -3,4 +3,8 @@ name = "toy-rendering-engine"
 version = "0.1.0"
 authors = ["Tom Andrews <git@tomandrews.co.uk>"]
 
+[[bin]]
+name = "toy-rendering-engine"
+path = "src/main.rs"
+
 [dependencies]
