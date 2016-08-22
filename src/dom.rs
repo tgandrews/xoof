@@ -30,7 +30,9 @@ impl fmt::Display for Node {
 impl Node {
     fn pretty_print(&self, depth: usize) -> String {
         let tag = match self.node_type {
-            NodeType::Text(_) => "Text".to_string(),
+            NodeType::Text(ref content) => {
+                "Text {".to_owned() + content.as_str() + "}"
+            },
             NodeType::Element(ref elem) => {
                 let mut output = elem.tag_name.clone();
                 output.push_str(" {");
@@ -57,7 +59,6 @@ impl Node {
         let next_depth = depth + 1;
         for child in &self.children {
             children_output += child.pretty_print(next_depth).as_str();
-            children_output += "\n";
         }
         return indent + tag.as_str() + "\n" + children_output.as_str();
     }
