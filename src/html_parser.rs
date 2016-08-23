@@ -26,11 +26,18 @@ impl Parser {
         if self.consume_char() != '>' {
             return Err("Expected close of opening tag".to_string());
         }
+        let mut children = vec!();
+        if !self.starts_with("</") {
+            match self.parse_node() {
+                Ok(node) => children.push(node),
+                Err(e) => return Err(e)
+            }
+        }
         let closing_tag = "</".to_owned() + tag_name.as_str() + ">";
         if !self.consume_expected_text(closing_tag.as_str()) {
             return Err(format!("Expected closing tag for: {}", tag_name))
         }
-        Ok(dom::element(tag_name, dom::AttrMap::new(), vec!()))
+        Ok(dom::element(tag_name, dom::AttrMap::new(), children))
     }
 
     fn parse_tag_name(&mut self) -> String {
