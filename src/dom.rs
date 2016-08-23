@@ -2,13 +2,13 @@ use std::collections::{HashMap};
 use std::fmt;
 
 #[derive(Debug)]
-enum NodeType {
+pub enum NodeType {
     Text(String),
     Element(ElementData),
 }
 
 #[derive(Debug)]
-struct ElementData {
+pub struct ElementData {
     tag_name: String,
     attributes: AttrMap,
 }
@@ -18,7 +18,7 @@ pub type AttrMap = HashMap<String, String>;
 #[derive(Debug)]
 pub struct Node {
     pub children: Vec<Node>,
-    node_type: NodeType,
+    pub node_type: NodeType,
 }
 
 impl fmt::Display for Node {
