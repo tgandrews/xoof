@@ -27,7 +27,7 @@ impl Parser {
             return Err("Expected close of opening tag".to_string());
         }
         let closing_tag = "</".to_owned() + tag_name.as_str() + ">";
-        if !self.consume_text(closing_tag.as_str()) {
+        if !self.consume_expected_text(closing_tag.as_str()) {
             return Err(format!("Expected closing tag for: {}", tag_name))
         }
         Ok(dom::element(tag_name, dom::AttrMap::new(), vec!()))
@@ -48,7 +48,7 @@ impl Parser {
         self.input[self.pos..].chars().next().unwrap()
     }
 
-    fn consume_text(&mut self, text: &str) -> bool {
+    fn consume_expected_text(&mut self, text: &str) -> bool {
         if !self.starts_with(text) {
             false
         } else {
