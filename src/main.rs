@@ -27,7 +27,7 @@ fn main() {
 
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => { m }
-        Err(f) => { println!("{}", f); return }
+        Err(f) => { show_error(format!("{}", f).as_str()); return }
     };
     if matches.opt_present("help") {
         print_usage(&program, opts);
