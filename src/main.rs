@@ -19,7 +19,7 @@ fn main() {
     println!("Welcome to Xoof");
 
     let mut opts = Options::new();
-    opts.optopt("h", "html", "set the html file to parse", "FILE NAME");
+    opts.optopt("h", "html", "set the html file to parse", "[FILE]");
     opts.optflag("", "help", "print this help menu");
 
     let args: Vec<String> = env::args().collect();
