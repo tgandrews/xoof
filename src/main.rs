@@ -2,8 +2,11 @@ extern crate getopts;
 
 use getopts::Options;
 use std::env;
+use std::io::Read;
+use std::fs::File;
 
 pub mod dom;
+pub mod html_parser;
 
 fn print_usage(program: &str, opts: Options) {
     let brief = format!("Usage: {} [options]", program);
@@ -40,4 +43,14 @@ fn main() {
     };
 
     println!("File path: {}", html_file_path);
+    let html = read_source(html_file_path);
+    let dom_tree = html_parser::parse(html);
+    println!("DOM Tree:");
+    println!("{}", dom_tree.unwrap());
+}
+
+fn read_source(file_path: String) -> String {
+    let mut buffer = String::new();
+    File::open(file_path).unwrap().read_to_string(&mut buffer).unwrap();
+    buffer
 }
