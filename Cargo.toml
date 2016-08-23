@@ -8,3 +8,4 @@ name = "toy-rendering-engine"
 path = "src/main.rs"
 
 [dependencies]
+getopts = "0.2"
