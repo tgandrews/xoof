@@ -3,13 +3,13 @@ use dom;
 
 #[test]
 fn it_works() {
-    match parse("test".to_string()) {
+    match parse("<test></test>".to_string()) {
         Ok(node) => {
             match (node.node_type) {
-                dom::NodeType::Text(c) => assert_eq!("Hello world!", c),
-                dom::NodeType::Element(_) => assert!(false)
+                dom::NodeType::Element(e) => assert_eq!(e.tag_name, "test"),
+                _ => assert!(false, "Wrong node type")
             }
         }
-        Err(err) => assert_eq!("", err)
+        _ => assert!(false)
     }
 }
