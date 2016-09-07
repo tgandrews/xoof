@@ -20,6 +20,16 @@ fn it_parses_child() {
     }
 }
 
+#[test]
+fn it_parse_text_node() {
+    let node = parse_html("<h1>hello world</h1>".to_string());
+    let ref first_child = node.children[0];
+    match &first_child.node_type {
+        &NodeType::Text(ref c) => assert_eq!(c, "hello world"),
+        _ => assert!(false, "Wrong node type")
+    }
+}
+
 fn parse_html(html: String) -> Node {
     match parse(html) {
         Ok(node) => {

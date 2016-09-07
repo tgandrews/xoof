@@ -14,8 +14,16 @@ impl Parser {
     fn parse_node(&mut self) -> Result<dom::Node, String> {
         match self.next_char() {
             '<' => self.parse_element(),
-            _ => Err("Unimplemented text node parsing".to_string())
+            _ => self.parse_text()
         }
+    }
+
+    fn parse_text(&mut self) -> Result<dom::Node, String> {
+        let text = self.consume_while(|c| match c {
+            '<' => false,
+            _ => true
+        });
+        Ok(dom::text(text))
     }
 
     fn parse_element(&mut self) -> Result<dom::Node, String> {
