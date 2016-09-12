@@ -1,6 +1,6 @@
 use dom;
 
-pub fn parse(html: String) -> Result<dom::Node, String> {
+pub fn parse(html: String) -> dom::Node {
     let mut parser = Parser { pos: 0, input: html };
     parser.parse_node()
 }
@@ -11,49 +11,40 @@ struct Parser {
 }
 
 impl Parser {
-    fn parse_nodes(&mut self) -> Result<Vec<dom::Node>, String> {
+    fn parse_nodes(&mut self) -> Vec<dom::Node> {
         let mut nodes = vec!();
         loop {
             self.consume_whitespace();
             if self.eof() || self.starts_with("</") {
                 break;
             }
-            match self.parse_node() {
-                Ok(node) => nodes.push(node),
-                Err(e) => return Err(e)
-            }
+            nodes.push(self.parse_node());
         }
-        return Ok(nodes);
+        return nodes;
     }
 
-    fn parse_node(&mut self) -> Result<dom::Node, String> {
+    fn parse_node(&mut self) -> dom::Node {
         match self.next_char() {
             '<' => self.parse_element(),
             _ => self.parse_text()
         }
     }
 
-    fn parse_text(&mut self) -> Result<dom::Node, String> {
+    fn parse_text(&mut self) -> dom::Node {
         let text = self.consume_while(|c| match c {
             '<' => false,
             _ => true
         });
-        Ok(dom::text(text))
+        dom::text(text)
     }
 
-    fn parse_element(&mut self) -> Result<dom::Node, String> {
-        if self.consume_char() != '<' {
-            return Err("Expected opening tag".to_string());
-        }
+    fn parse_element(&mut self) -> dom::Node {
+        assert_eq!(self.consume_char(), '<');
         let (tag_name, attributes) = self.parse_tag();
-
-        let children = match self.parse_nodes() {
-            Ok(c) => c,
-            Err(e) => return Err(e)
-        };
+        let children = self.parse_nodes();
         self.consume_closing_tag(tag_name.as_str());
         self.consume_whitespace();
-        Ok(dom::element(tag_name, attributes, children))
+        dom::element(tag_name, attributes, children)
     }
 
     fn parse_tag(&mut self) -> (String, dom::AttrMap) {
@@ -102,7 +93,7 @@ impl Parser {
     fn consume_closing_tag(&mut self, tag_name: &str) {
         let closing_tag = "</".to_owned() + tag_name + ">";
         if !self.consume_expected_text(closing_tag.as_str()) {
-            return assert!(false, "Expected closing tag for: ".to_owned() + tag_name)
+            assert!(false, "Expected closing tag for: ".to_owned() + tag_name)
         }
     }
 
