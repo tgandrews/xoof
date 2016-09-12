@@ -30,11 +30,15 @@ impl Parser {
         if self.consume_char() != '<' {
             return Err("Expected opening tag".to_string());
         }
+        self.consume_whitespace();
         let tag_name = self.parse_tag_name();
+        self.consume_whitespace();
         let attributes = self.parse_attributes();
+        self.consume_whitespace();
         if self.consume_char() != '>' {
             return Err("Expected close of opening tag".to_string());
         }
+        self.consume_whitespace();
         let mut children = vec!();
         if !self.starts_with("</") {
             match self.parse_node() {
@@ -42,6 +46,7 @@ impl Parser {
                 Err(e) => return Err(e)
             }
         }
+        self.consume_whitespace();
         let closing_tag = "</".to_owned() + tag_name.as_str() + ">";
         if !self.consume_expected_text(closing_tag.as_str()) {
             return Err(format!("Expected closing tag for: {}", tag_name))
