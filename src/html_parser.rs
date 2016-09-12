@@ -51,10 +51,7 @@ impl Parser {
             Ok(c) => c,
             Err(e) => return Err(e)
         };
-        let closing_tag = "</".to_owned() + tag_name.as_str() + ">";
-        if !self.consume_expected_text(closing_tag.as_str()) {
-            return Err(format!("Expected closing tag for: {}", tag_name))
-        }
+        self.consume_closing_tag(tag_name.as_str());
         self.consume_whitespace();
         Ok(dom::element(tag_name, attributes, children))
     }
@@ -100,6 +97,13 @@ impl Parser {
         });
         assert_eq!('"', self.consume_char());
         return value;
+    }
+
+    fn consume_closing_tag(&mut self, tag_name: &str) {
+        let closing_tag = "</".to_owned() + tag_name + ">";
+        if !self.consume_expected_text(closing_tag.as_str()) {
+            return assert!(false, "Expected closing tag for: ".to_owned() + tag_name)
+        }
     }
 
     fn starts_with(&self, text: &str) -> bool {
