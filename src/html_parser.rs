@@ -11,6 +11,21 @@ struct Parser {
 }
 
 impl Parser {
+    fn parse_nodes(&mut self) -> Result<Vec<dom::Node>, String> {
+        let mut nodes = vec!();
+        loop {
+            self.consume_whitespace();
+            if self.eof() || self.starts_with("</") {
+                break;
+            }
+            match self.parse_node() {
+                Ok(node) => nodes.push(node),
+                Err(e) => return Err(e)
+            }
+        }
+        return Ok(nodes);
+    }
+
     fn parse_node(&mut self) -> Result<dom::Node, String> {
         match self.next_char() {
             '<' => self.parse_element(),
@@ -30,23 +45,12 @@ impl Parser {
         if self.consume_char() != '<' {
             return Err("Expected opening tag".to_string());
         }
-        self.consume_whitespace();
-        let tag_name = self.parse_tag_name();
-        self.consume_whitespace();
-        let attributes = self.parse_attributes();
-        self.consume_whitespace();
-        if self.consume_char() != '>' {
-            return Err("Expected close of opening tag".to_string());
-        }
-        self.consume_whitespace();
-        let mut children = vec!();
-        while !self.starts_with("</") {
-            match self.parse_node() {
-                Ok(node) => children.push(node),
-                Err(e) => return Err(e)
-            }
-        }
-        self.consume_whitespace();
+        let (tag_name, attributes) = self.parse_tag();
+
+        let children = match self.parse_nodes() {
+            Ok(c) => c,
+            Err(e) => return Err(e)
+        };
         let closing_tag = "</".to_owned() + tag_name.as_str() + ">";
         if !self.consume_expected_text(closing_tag.as_str()) {
             return Err(format!("Expected closing tag for: {}", tag_name))
@@ -55,20 +59,31 @@ impl Parser {
         Ok(dom::element(tag_name, attributes, children))
     }
 
+    fn parse_tag(&mut self) -> (String, dom::AttrMap) {
+        let tag_name = self.parse_tag_name();
+        let attributes = self.parse_attributes();
+        self.consume_whitespace();
+        assert_eq!('>', self.consume_char());
+        return (tag_name, attributes);
+    }
+
     fn parse_tag_name(&mut self) -> String {
+        self.consume_whitespace();
         self.consume_alphanumeric_word()
     }
 
     fn parse_attributes(&mut self) -> dom::AttrMap {
         let mut attrs = dom::AttrMap::new();
-        while !self.eof() && self.next_char() != '>' {
+        loop {
             self.consume_whitespace();
+            if self.next_char() == '>' {
+                break;
+            }
             let name = self.parse_attribute_name();
-            self.consume_whitespace();
             assert_eq!('=', self.consume_char());
-            self.consume_whitespace();
             let value = self.parse_attribute_value();
             attrs.insert(name, value);
+
         }
         return attrs;
     }
@@ -115,10 +130,7 @@ impl Parser {
     }
 
     fn consume_whitespace(&mut self) {
-        self.consume_while(|c| match c {
-            ' ' | '\t' | '\r' | '\n' => true,
-            _ => false
-        });
+        self.consume_while(char::is_whitespace);
     }
 
     fn consume_while<F>(&mut self, test: F) -> String
