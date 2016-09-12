@@ -51,6 +51,7 @@ impl Parser {
         if !self.consume_expected_text(closing_tag.as_str()) {
             return Err(format!("Expected closing tag for: {}", tag_name))
         }
+        self.consume_whitespace();
         Ok(dom::element(tag_name, attributes, children))
     }
 
