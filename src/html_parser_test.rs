@@ -21,6 +21,16 @@ fn it_parses_child() {
 }
 
 #[test]
+fn it_parses_siblings() {
+    let node = parse_html("<test><child></child><child2></child2></test>".to_string());
+    let ref second_child = node.children[1];
+    match &second_child.node_type {
+        &NodeType::Element(ref e) => assert_eq!(e.tag_name, "child2"),
+        _ => assert!(false, "Wrong node type")
+    }
+}
+
+#[test]
 fn it_parse_text_node() {
     let node = parse_html("<h1>hello world</h1>".to_string());
     let ref first_child = node.children[0];

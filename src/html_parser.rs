@@ -40,7 +40,7 @@ impl Parser {
         }
         self.consume_whitespace();
         let mut children = vec!();
-        if !self.starts_with("</") {
+        while !self.starts_with("</") {
             match self.parse_node() {
                 Ok(node) => children.push(node),
                 Err(e) => return Err(e)
