@@ -31,6 +31,7 @@ impl Parser {
             return Err("Expected opening tag".to_string());
         }
         let tag_name = self.parse_tag_name();
+        let attributes = self.parse_attributes();
         if self.consume_char() != '>' {
             return Err("Expected close of opening tag".to_string());
         }
@@ -45,14 +46,39 @@ impl Parser {
         if !self.consume_expected_text(closing_tag.as_str()) {
             return Err(format!("Expected closing tag for: {}", tag_name))
         }
-        Ok(dom::element(tag_name, dom::AttrMap::new(), children))
+        Ok(dom::element(tag_name, attributes, children))
     }
 
     fn parse_tag_name(&mut self) -> String {
-        self.consume_while(|c| match c {
-            'a'...'z' | 'A'...'Z' | '0'...'9' => true,
-            _ => false
-        })
+        self.consume_alphanumeric_word()
+    }
+
+    fn parse_attributes(&mut self) -> dom::AttrMap {
+        let mut attrs = dom::AttrMap::new();
+        while !self.eof() && self.next_char() != '>' {
+            self.consume_whitespace();
+            let name = self.parse_attribute_name();
+            self.consume_whitespace();
+            assert_eq!('=', self.consume_char());
+            self.consume_whitespace();
+            let value = self.parse_attribute_value();
+            attrs.insert(name, value);
+        }
+        return attrs;
+    }
+
+    fn parse_attribute_name(&mut self) -> String {
+        self.consume_alphanumeric_word()
+    }
+
+    fn parse_attribute_value(&mut self) -> String {
+        assert_eq!('"', self.consume_char());
+        let value = self.consume_while(|c| match c {
+            '"' => false,
+            _ => true
+        });
+        assert_eq!('"', self.consume_char());
+        return value;
     }
 
     fn starts_with(&self, text: &str) -> bool {
@@ -73,6 +99,20 @@ impl Parser {
             }
             true
         }
+    }
+
+    fn consume_alphanumeric_word(&mut self) -> String {
+        self.consume_while(|c| match c {
+            'a'...'z' | 'A'...'Z' | '0'...'9' => true,
+            _ => false
+        })
+    }
+
+    fn consume_whitespace(&mut self) {
+        self.consume_while(|c| match c {
+            ' ' | '\t' | '\r' | '\n' => true,
+            _ => false
+        });
     }
 
     fn consume_while<F>(&mut self, test: F) -> String

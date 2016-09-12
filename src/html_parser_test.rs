@@ -30,6 +30,21 @@ fn it_parse_text_node() {
     }
 }
 
+#[test]
+fn it_parses_attributes() {
+    let node = parse_html("<h1 id=\"title\">Hello world</h1>".to_string());
+    match node.node_type {
+        NodeType::Element(e) => {
+            let id = match e.attributes.get("id") {
+                Some(v) => v,
+                None => "No id"
+            };
+            assert_eq!(id, "title");
+        },
+        _ => assert!(false, "Wrong node type")
+    }
+}
+
 fn parse_html(html: String) -> Node {
     match parse(html) {
         Ok(node) => {
