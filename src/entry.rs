@@ -43,7 +43,9 @@ pub fn entry() {
     let html = read_source(html_file_path);
     let dom_tree = html_parser::parse(html);
     println!("DOM Tree:");
-    println!("{}", dom_tree);
+    for node in &dom_tree {
+        println!("{}", node);
+    }
 }
 
 fn read_source(file_path: String) -> String {

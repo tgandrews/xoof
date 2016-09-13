@@ -1,8 +1,8 @@
 use dom;
 
-pub fn parse(html: String) -> dom::Node {
+pub fn parse(html: String) -> Vec<dom::Node> {
     let mut parser = Parser { pos: 0, input: html };
-    parser.parse_node()
+    parser.parse_nodes()
 }
 
 struct Parser {
