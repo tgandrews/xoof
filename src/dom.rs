@@ -3,9 +3,10 @@ use std::fmt;
 
 #[derive(Debug)]
 pub enum NodeType {
-    Text(String),
+    Comment(String),
+    DocType(DocTypeData),
     Element(ElementData),
-    DocType(DocTypeData)
+    Text(String)
 }
 
 #[derive(Debug)]
@@ -42,6 +43,9 @@ impl Node {
             NodeType::DocType(ref elem) => {
                 "DocType {".to_owned() + elem.version.as_str() + "}"
             },
+            NodeType::Comment(ref comment) => {
+                "Comment {".to_owned() + comment.as_str() + "}"
+            }
             NodeType::Element(ref elem) => {
                 let mut output = elem.tag_name.clone();
                 output.push_str(" {");
@@ -82,6 +86,10 @@ pub fn doctype(version: String) -> Node {
 
 pub fn text(data: String) -> Node {
     Node { children: Vec::new(), node_type: NodeType::Text(data) }
+}
+
+pub fn comment(comment: String) -> Node {
+    Node { children: Vec::new(), node_type: NodeType::Comment(comment) }
 }
 
 pub fn element(name: String, attrs: AttrMap, children: Vec<Node>) -> Node {

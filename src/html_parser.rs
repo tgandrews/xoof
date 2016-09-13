@@ -26,7 +26,9 @@ impl Parser {
     fn parse_node(&mut self) -> dom::Node {
         match self.next_char() {
             '<' => {
-                if self.starts_with("<!") {
+                if self.starts_with("<!--") {
+                    self.parse_comment()
+                } else if self.starts_with("<!") {
                     self.parse_doctype()
                 } else {
                     self.parse_element()
@@ -51,6 +53,23 @@ impl Parser {
         self.consume_whitespace();
         assert!(self.consume_expected_text(">"), "Expected close of doctype");
         dom::doctype(version)
+    }
+
+    fn parse_comment(&mut self) -> dom::Node {
+        self.consume_expected_text("<!--");
+        let mut comment = String::new();
+        loop {
+            let partial = self.consume_while(|c| match c {
+                '-' => false,
+                _ => true
+            });
+            comment.push_str(partial.as_str());
+            if self.eof() || self.starts_with("-->") {
+                break;
+            }
+        }
+        self.consume_expected_text("-->");
+        dom::comment(comment)
     }
 
     fn parse_element(&mut self) -> dom::Node {

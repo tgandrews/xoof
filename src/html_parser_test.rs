@@ -92,3 +92,12 @@ fn it_parses_self_closing_meta() {
         _ => assert!(false, "Wrong node type")
     }
 }
+
+#[test]
+fn it_parses_comments() {
+    let ref node = parse("<!-- hello world -->".to_string())[0];
+    match &node.node_type {
+        &NodeType::Comment(ref c) => assert_eq!(c, " hello world "),
+        _ => assert!(false, "Wrong node type")
+    }
+}
