@@ -72,3 +72,23 @@ fn it_parses_document_as_doctype_sibling() {
         _ => assert!(false, "Wrong node type")
     }
 }
+
+#[test]
+fn it_parses_self_closing_link() {
+    let ref node = parse("<head><link></head>".to_string())[0];
+    let ref link = node.children[0];
+    match &link.node_type {
+        &NodeType::Element(ref e) => assert_eq!(e.tag_name, "link"),
+        _ => assert!(false, "Wrong node type")
+    }
+}
+
+#[test]
+fn it_parses_self_closing_meta() {
+    let ref node = parse("<head><meta></head>".to_string())[0];
+    let ref link = node.children[0];
+    match &link.node_type {
+        &NodeType::Element(ref e) => assert_eq!(e.tag_name, "meta"),
+        _ => assert!(false, "Wrong node type")
+    }
+}

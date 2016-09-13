@@ -106,6 +106,9 @@ impl Parser {
     }
 
     fn consume_closing_tag(&mut self, tag_name: &str) {
+        if tag_name == "link" || tag_name == "meta" {
+            return;
+        }
         let closing_tag = "</".to_owned() + tag_name + ">";
         if !self.consume_expected_text(closing_tag.as_str()) {
             assert!(false, "Expected closing tag for: ".to_owned() + tag_name)
