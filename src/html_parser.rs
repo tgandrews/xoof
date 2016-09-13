@@ -25,7 +25,13 @@ impl Parser {
 
     fn parse_node(&mut self) -> dom::Node {
         match self.next_char() {
-            '<' => self.parse_element(),
+            '<' => {
+                if self.starts_with("<!") {
+                    self.parse_doctype()
+                } else {
+                    self.parse_element()
+                }
+            },
             _ => self.parse_text()
         }
     }
@@ -36,6 +42,15 @@ impl Parser {
             _ => true
         });
         dom::text(text)
+    }
+
+    fn parse_doctype(&mut self) -> dom::Node {
+        assert!(self.consume_expected_text("<!DOCTYPE"), "Expected doctype");
+        self.consume_whitespace();
+        let version = self.consume_alphanumeric_word();
+        self.consume_whitespace();
+        assert!(self.consume_expected_text(">"), "Expected close of doctype");
+        dom::doctype(version)
     }
 
     fn parse_element(&mut self) -> dom::Node {

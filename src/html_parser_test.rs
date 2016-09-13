@@ -54,3 +54,12 @@ fn it_parses_attributes() {
         _ => assert!(false, "Wrong node type")
     }
 }
+
+#[test]
+fn it_parses_doctype() {
+    let node = parse("<!DOCTYPE html>".to_string());
+    match node.node_type {
+        NodeType::DocType(e) => assert_eq!(e.version, "html"),
+        _ => assert!(false, "Wrong node type")
+    }
+}

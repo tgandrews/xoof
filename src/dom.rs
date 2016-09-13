@@ -5,12 +5,18 @@ use std::fmt;
 pub enum NodeType {
     Text(String),
     Element(ElementData),
+    DocType(DocTypeData)
 }
 
 #[derive(Debug)]
 pub struct ElementData {
     pub tag_name: String,
     pub attributes: AttrMap,
+}
+
+#[derive(Debug)]
+pub struct DocTypeData {
+    pub version: String
 }
 
 pub type AttrMap = HashMap<String, String>;
@@ -32,6 +38,9 @@ impl Node {
         let tag = match self.node_type {
             NodeType::Text(ref content) => {
                 "Text {".to_owned() + content.as_str() + "}"
+            },
+            NodeType::DocType(ref elem) => {
+                "DocType {".to_owned() + elem.version.as_str() + "}"
             },
             NodeType::Element(ref elem) => {
                 let mut output = elem.tag_name.clone();
@@ -64,6 +73,12 @@ impl Node {
     }
 }
 
+
+pub fn doctype(version: String) -> Node {
+    Node { children: Vec::new(), node_type: NodeType::DocType(DocTypeData {
+        version: version
+    })}
+}
 
 pub fn text(data: String) -> Node {
     Node { children: Vec::new(), node_type: NodeType::Text(data) }
