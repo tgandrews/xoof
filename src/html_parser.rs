@@ -111,7 +111,10 @@ impl Parser {
     }
 
     fn parse_attribute_name(&mut self) -> String {
-        self.consume_alphanumeric_word()
+        self.consume_while(|c| match c {
+            'a'...'z' | 'A'...'Z' | '0'...'9' | '-' | '_' => true,
+            _ => false
+        })
     }
 
     fn parse_attribute_value(&mut self) -> String {
