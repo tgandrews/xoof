@@ -105,12 +105,14 @@ impl Parser {
             Ok(atts) => atts,
             Err(e) => return Err(e)
         };
+
         self.consume_whitespace();
-        let final_char = self.consume_char();
-        if final_char == '>' {
+        let ending_len = if self.starts_with("/") { 2 } else { 1 };
+        let ending = self.consume_next_n_chars(ending_len);
+        if ending.ends_with(">") {
             Ok((tag_name, attributes))
         } else {
-            Err(format!("Expcted end of tag but found: {}", final_char))
+            Err(format!("Expected end of tag but found: {}", ending))
         }
     }
 
@@ -123,7 +125,7 @@ impl Parser {
         let mut attrs = dom::AttrMap::new();
         loop {
             self.consume_whitespace();
-            if self.next_char() == '>' {
+            if self.next_char() == '>' || self.next_char() == '/' {
                 break;
             }
             let name = self.parse_attribute_name();
@@ -179,15 +181,7 @@ impl Parser {
 
     fn consume_expected_text(&mut self, text: &str) -> Option<String> {
         if !self.starts_with(text) {
-            let mut len = 0;
-            let mut value = String::new();
-            loop {
-                if len > text.len() {
-                    break;
-                }
-                value.push(self.consume_char());
-                len += 1;
-            }
+            let value = self.consume_next_n_chars(text.len());
             Some(format!("Expected: {} Found: {}", text, value))
         } else {
             let length = text.len();
@@ -196,6 +190,17 @@ impl Parser {
             }
             None
         }
+    }
+
+    fn consume_next_n_chars(&mut self, len: usize) -> String {
+        let mut value = String::new();
+        for _ in 0..len {
+            if self.eof() {
+                break;
+            }
+            value.push(self.consume_char());
+        }
+        return value;
     }
 
     fn consume_alphanumeric_word(&mut self) -> String {
