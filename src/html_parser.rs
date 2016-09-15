@@ -66,6 +66,8 @@ impl Parser {
             comment.push_str(partial.as_str());
             if self.eof() || self.starts_with("-->") {
                 break;
+            } else {
+                comment.push(self.consume_char());
             }
         }
         self.consume_expected_text("-->");
@@ -147,6 +149,16 @@ impl Parser {
 
     fn consume_expected_text(&mut self, text: &str) -> bool {
         if !self.starts_with(text) {
+            let mut len = 0;
+            let mut value = String::new();
+            loop {
+                if len > text.len() {
+                    break;
+                }
+                value.push(self.consume_char());
+                len += 1;
+            }
+            println!("Expected: {} Found: {}", text, value);
             false
         } else {
             let length = text.len();
