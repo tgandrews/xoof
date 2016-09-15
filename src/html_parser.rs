@@ -1,13 +1,14 @@
 use dom;
 
 pub fn parse(html: String) -> Vec<dom::Node> {
-    let mut parser = Parser { pos: 0, input: html };
+    let mut parser = Parser { pos: 0, input: html, line_num: 1 };
     parser.parse_nodes()
 }
 
 struct Parser {
     pos: usize,
-    input: String
+    input: String,
+    line_num: usize
 }
 
 impl Parser {
@@ -18,12 +19,15 @@ impl Parser {
             if self.eof() || self.starts_with("</") {
                 break;
             }
-            nodes.push(self.parse_node());
+            match self.parse_node() {
+                Ok(node) => nodes.push(node),
+                Err(err) => println!("Line: {}, {}", self.line_num, err)
+            }
         }
         return nodes;
     }
 
-    fn parse_node(&mut self) -> dom::Node {
+    fn parse_node(&mut self) -> Result<dom::Node, String> {
         match self.next_char() {
             '<' => {
                 if self.starts_with("<!--") {
@@ -38,24 +42,30 @@ impl Parser {
         }
     }
 
-    fn parse_text(&mut self) -> dom::Node {
+    fn parse_text(&mut self) -> Result<dom::Node, String> {
         let text = self.consume_while(|c| match c {
             '<' => false,
             _ => true
         });
-        dom::text(text)
+        Ok(dom::text(text))
     }
 
-    fn parse_doctype(&mut self) -> dom::Node {
-        assert!(self.consume_expected_text("<!DOCTYPE"), "Expected doctype");
+    fn parse_doctype(&mut self) -> Result<dom::Node, String> {
+        match self.consume_expected_text("<!DOCTYPE") {
+            Some(e) => return Err(e),
+            None => {}
+        }
         self.consume_whitespace();
         let version = self.consume_alphanumeric_word();
         self.consume_whitespace();
-        assert!(self.consume_expected_text(">"), "Expected close of doctype");
-        dom::doctype(version)
+        match self.consume_expected_text(">") {
+            Some(e) => return Err(e),
+            None => {}
+        }
+        Ok(dom::doctype(version))
     }
 
-    fn parse_comment(&mut self) -> dom::Node {
+    fn parse_comment(&mut self) -> Result<dom::Node, String> {
         self.consume_expected_text("<!--");
         let mut comment = String::new();
         loop {
@@ -71,24 +81,37 @@ impl Parser {
             }
         }
         self.consume_expected_text("-->");
-        dom::comment(comment)
+        Ok(dom::comment(comment))
     }
 
-    fn parse_element(&mut self) -> dom::Node {
-        assert_eq!(self.consume_char(), '<');
-        let (tag_name, attributes) = self.parse_tag();
+    fn parse_element(&mut self) -> Result<dom::Node, String> {
+        match self.consume_expected_text("<") {
+            Some(e) => return Err(e),
+            _ => {}
+        }
+        let (tag_name, attributes) = match self.parse_tag() {
+            Ok((tag_name, attributes)) => (tag_name, attributes),
+            Err(e) => return Err(e)
+        };
         let children = self.parse_nodes();
         self.consume_closing_tag(tag_name.as_str());
         self.consume_whitespace();
-        dom::element(tag_name, attributes, children)
+        Ok(dom::element(tag_name, attributes, children))
     }
 
-    fn parse_tag(&mut self) -> (String, dom::AttrMap) {
+    fn parse_tag(&mut self) -> Result<(String, dom::AttrMap), String> {
         let tag_name = self.parse_tag_name();
-        let attributes = self.parse_attributes();
+        let attributes = match self.parse_attributes() {
+            Ok(atts) => atts,
+            Err(e) => return Err(e)
+        };
         self.consume_whitespace();
-        assert_eq!('>', self.consume_char());
-        return (tag_name, attributes);
+        let final_char = self.consume_char();
+        if final_char == '>' {
+            Ok((tag_name, attributes))
+        } else {
+            Err(format!("Expcted end of tag but found: {}", final_char))
+        }
     }
 
     fn parse_tag_name(&mut self) -> String {
@@ -96,7 +119,7 @@ impl Parser {
         self.consume_alphanumeric_word()
     }
 
-    fn parse_attributes(&mut self) -> dom::AttrMap {
+    fn parse_attributes(&mut self) ->  Result<dom::AttrMap, String> {
         let mut attrs = dom::AttrMap::new();
         loop {
             self.consume_whitespace();
@@ -104,12 +127,17 @@ impl Parser {
                 break;
             }
             let name = self.parse_attribute_name();
-            assert_eq!('=', self.consume_char());
-            let value = self.parse_attribute_value();
+            let next_char = self.consume_char();
+            if next_char != '=' {
+                return Err(format!("Unexpected char in attribute parsing Expected: = found: {}", next_char));
+            }
+            let value = match self.parse_attribute_value() {
+                Ok(v) => v,
+                Err(e) => return Err(e)
+            };
             attrs.insert(name, value);
-
         }
-        return attrs;
+        Ok(attrs)
     }
 
     fn parse_attribute_name(&mut self) -> String {
@@ -119,23 +147,25 @@ impl Parser {
         })
     }
 
-    fn parse_attribute_value(&mut self) -> String {
-        assert_eq!('"', self.consume_char());
+    fn parse_attribute_value(&mut self) -> Result<String, String> {
+        let first_char = self.consume_char();
+        if first_char != '"' && first_char != '\'' {
+            return Err(format!("Expected opening of attribute value but found: {}", first_char));
+        }
         let value = self.consume_while(|c| match c {
-            '"' => false,
+            '"' | '\'' => false,
             _ => true
         });
-        assert_eq!('"', self.consume_char());
-        return value;
+        self.consume_char();
+        Ok(value)
     }
 
-    fn consume_closing_tag(&mut self, tag_name: &str) {
+    fn consume_closing_tag(&mut self, tag_name: &str) -> Option<String> {
         if tag_name == "link" || tag_name == "meta" {
-            return;
-        }
-        let closing_tag = "</".to_owned() + tag_name + ">";
-        if !self.consume_expected_text(closing_tag.as_str()) {
-            assert!(false, "Expected closing tag for: ".to_owned() + tag_name)
+            None
+        } else {
+            let closing_tag = "</".to_owned() + tag_name + ">";
+            self.consume_expected_text(closing_tag.as_str())
         }
     }
 
@@ -147,7 +177,7 @@ impl Parser {
         self.input[self.pos..].chars().next().unwrap()
     }
 
-    fn consume_expected_text(&mut self, text: &str) -> bool {
+    fn consume_expected_text(&mut self, text: &str) -> Option<String> {
         if !self.starts_with(text) {
             let mut len = 0;
             let mut value = String::new();
@@ -158,14 +188,13 @@ impl Parser {
                 value.push(self.consume_char());
                 len += 1;
             }
-            println!("Expected: {} Found: {}", text, value);
-            false
+            Some(format!("Expected: {} Found: {}", text, value))
         } else {
             let length = text.len();
             for _ in 0..length {
                 self.consume_char();
             }
-            true
+            None
         }
     }
 
@@ -194,6 +223,9 @@ impl Parser {
         let (_, cur_char) = iter.next().unwrap();
         let (char_len, _) = iter.next().unwrap_or((1, ' '));
         self.pos += char_len;
+        if cur_char == '\n' {
+            self.line_num += 1;
+        }
         return cur_char;
     }
 
