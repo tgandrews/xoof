@@ -3,16 +3,16 @@ use dom::*;
 
 #[test]
 fn it_parses_element() {
-    let ref node = parse("<test></test>".to_string())[0];
-    match &node.node_type {
-        &NodeType::Element(ref e) => assert_eq!(e.tag_name, "test"),
+    let node = get_nth_child("<test></test>".to_string(), 0);
+    match node.node_type {
+        NodeType::Element(e) => assert_eq!(e.tag_name, "test"),
         _ => assert!(false, "Wrong node type")
     }
 }
 
 #[test]
 fn it_parses_child() {
-    let ref node = parse("<test><child></child></test>".to_string())[0];
+    let node = get_nth_child("<test><child></child></test>".to_string(), 0);
     let ref first_child = node.children[0];
     match &first_child.node_type {
         &NodeType::Element(ref e) => assert_eq!(e.tag_name, "child"),
@@ -22,7 +22,7 @@ fn it_parses_child() {
 
 #[test]
 fn it_parses_siblings() {
-    let ref node = parse("<test><child></child><child2></child2></test>".to_string())[0];
+    let node = get_nth_child("<test><child></child><child2></child2></test>".to_string(), 0);
     let ref second_child = node.children[1];
     match &second_child.node_type {
         &NodeType::Element(ref e) => assert_eq!(e.tag_name, "child2"),
@@ -32,7 +32,7 @@ fn it_parses_siblings() {
 
 #[test]
 fn it_parse_text_node() {
-    let ref node = parse("<h1>hello world</h1>".to_string())[0];
+    let node = get_nth_child("<h1>hello world</h1>".to_string(), 0);
     let ref first_child = node.children[0];
     match &first_child.node_type {
         &NodeType::Text(ref c) => assert_eq!(c, "hello world"),
@@ -42,9 +42,9 @@ fn it_parse_text_node() {
 
 #[test]
 fn it_parses_attributes() {
-    let ref node = parse("<h1 id=\"title\">Hello world</h1>".to_string())[0];
-    match &node.node_type {
-        &NodeType::Element(ref e) => {
+    let node = get_nth_child("<h1 id=\"title\">Hello world</h1>".to_string(), 0);
+    match node.node_type {
+        NodeType::Element(e) => {
             let id = match e.attributes.get("id") {
                 Some(v) => v,
                 None => "No id"
@@ -57,25 +57,25 @@ fn it_parses_attributes() {
 
 #[test]
 fn it_parses_doctype() {
-    let ref node = parse("<!DOCTYPE html>".to_string())[0];
-    match &node.node_type {
-        &NodeType::DocType(ref e) => assert_eq!(e.version, "html"),
+    let node = get_nth_child("<!DOCTYPE html>".to_string(), 0);
+    match node.node_type {
+        NodeType::DocType(ref e) => assert_eq!(e.version, "html"),
         _ => assert!(false, "Wrong node type")
     }
 }
 
 #[test]
 fn it_parses_document_as_doctype_sibling() {
-    let ref node = parse("<!DOCTYPE html><html></html>".to_string())[1];
-    match &node.node_type {
-        &NodeType::Element(ref e) => assert_eq!(e.tag_name, "html"),
+    let node = get_nth_child("<!DOCTYPE html><html></html>".to_string(), 1);
+    match node.node_type {
+        NodeType::Element(ref e) => assert_eq!(e.tag_name, "html"),
         _ => assert!(false, "Wrong node type")
     }
 }
 
 #[test]
 fn it_parses_self_closing_link() {
-    let ref node = parse("<head><link></head>".to_string())[0];
+    let node = get_nth_child("<head><link></head>".to_string(), 0);
     let ref link = node.children[0];
     match &link.node_type {
         &NodeType::Element(ref e) => assert_eq!(e.tag_name, "link"),
@@ -85,7 +85,7 @@ fn it_parses_self_closing_link() {
 
 #[test]
 fn it_parses_self_closing_meta() {
-    let ref node = parse("<head><meta></head>".to_string())[0];
+    let node = get_nth_child("<head><meta></head>".to_string(), 0);
     let ref link = node.children[0];
     match &link.node_type {
         &NodeType::Element(ref e) => assert_eq!(e.tag_name, "meta"),
@@ -95,18 +95,26 @@ fn it_parses_self_closing_meta() {
 
 #[test]
 fn it_parses_comments() {
-    let ref node = parse("<!-- hello world -->".to_string())[0];
-    match &node.node_type {
-        &NodeType::Comment(ref c) => assert_eq!(c, " hello world "),
+    let node = get_nth_child("<!-- hello world -->".to_string(), 0);
+    match node.node_type {
+        NodeType::Comment(c) => assert_eq!(c, " hello world "),
         _ => assert!(false, "Wrong node type")
     }
 }
 
 #[test]
 fn it_parses_coments_with_dashes() {
-    let ref node = parse("<!-- hello - world -->".to_string())[0];
-    match &node.node_type {
-        &NodeType::Comment(ref c) => assert_eq!(c, " hello - world "),
+    let node = get_nth_child("<!-- hello - world -->".to_string(), 0);
+    match node.node_type {
+        NodeType::Comment(c) => assert_eq!(c, " hello - world "),
         _ => assert!(false, "Wrong node type")
     }
+}
+
+fn get_nth_child(text: String, pos: usize) -> Node {
+    let mut warnings = vec!();
+    let nodes = parse(text, &mut warnings);
+    let node = nodes[pos].clone();
+    assert_eq!(warnings.len(), 0, "No warnings expected");
+    return node;
 }

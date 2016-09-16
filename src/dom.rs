@@ -2,6 +2,7 @@ use std::collections::{HashMap};
 use std::fmt;
 
 #[derive(Debug)]
+#[derive(Clone)]
 pub enum NodeType {
     Comment(String),
     DocType(DocTypeData),
@@ -10,12 +11,14 @@ pub enum NodeType {
 }
 
 #[derive(Debug)]
+#[derive(Clone)]
 pub struct ElementData {
     pub tag_name: String,
     pub attributes: AttrMap,
 }
 
 #[derive(Debug)]
+#[derive(Clone)]
 pub struct DocTypeData {
     pub version: String
 }
@@ -23,6 +26,7 @@ pub struct DocTypeData {
 pub type AttrMap = HashMap<String, String>;
 
 #[derive(Debug)]
+#[derive(Clone)]
 pub struct Node {
     pub children: Vec<Node>,
     pub node_type: NodeType,
