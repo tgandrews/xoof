@@ -94,6 +94,15 @@ fn it_parses_self_closing_meta() {
 }
 
 #[test]
+fn it_does_not_include_next_inside_self_closing() {
+    let node = get_nth_child("<meta><link>".to_string(), 1);
+    match node.node_type {
+        NodeType::Element(e) => assert_eq!(e.tag_name, "link"),
+        _ => assert!(false, "Wrong node type")
+    }
+}
+
+#[test]
 fn it_parses_comments() {
     let node = get_nth_child("<!-- hello world -->".to_string(), 0);
     match node.node_type {

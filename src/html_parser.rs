@@ -93,7 +93,11 @@ impl Parser {
             Ok((tag_name, attributes)) => (tag_name, attributes),
             Err(e) => return Err(e)
         };
-        let children = self.parse_nodes(warnings);
+        let children = if !self.is_self_closing(tag_name.as_str()) {
+            self.parse_nodes(warnings)
+        } else {
+            vec!()
+        };
         match self.consume_closing_tag(tag_name.as_str()) {
             Some(e) => return Err(e),
             _ => {}
@@ -166,11 +170,18 @@ impl Parser {
     }
 
     fn consume_closing_tag(&mut self, tag_name: &str) -> Option<String> {
-        if tag_name == "link" || tag_name == "meta" {
+        if self.is_self_closing(tag_name) {
             None
         } else {
             let closing_tag = "</".to_owned() + tag_name + ">";
             self.consume_expected_text(closing_tag.as_str())
+        }
+    }
+
+    fn is_self_closing(&self, tag_name: &str) -> bool {
+        match tag_name {
+            "link" | "meta" => true,
+            _ => false
         }
     }
 
