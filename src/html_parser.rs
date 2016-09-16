@@ -94,7 +94,10 @@ impl Parser {
             Err(e) => return Err(e)
         };
         let children = self.parse_nodes();
-        self.consume_closing_tag(tag_name.as_str());
+        match self.consume_closing_tag(tag_name.as_str()) {
+            Some(e) => return Err(e),
+            _ => {}
+        }
         self.consume_whitespace();
         Ok(dom::element(tag_name, attributes, children))
     }
