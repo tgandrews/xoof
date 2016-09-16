@@ -1,8 +1,8 @@
 use dom;
 
-pub fn parse(html: String) -> Vec<dom::Node> {
+pub fn parse(html: String, warnings: &mut Vec<String>) -> Vec<dom::Node> {
     let mut parser = Parser { pos: 0, input: html, line_num: 1 };
-    parser.parse_nodes()
+    parser.parse_nodes(warnings)
 }
 
 struct Parser {
@@ -12,22 +12,22 @@ struct Parser {
 }
 
 impl Parser {
-    fn parse_nodes(&mut self) -> Vec<dom::Node> {
+    fn parse_nodes(&mut self, warnings: &mut Vec<String>) -> Vec<dom::Node> {
         let mut nodes = vec!();
         loop {
             self.consume_whitespace();
             if self.eof() || self.starts_with("</") {
                 break;
             }
-            match self.parse_node() {
+            match self.parse_node(warnings) {
                 Ok(node) => nodes.push(node),
-                Err(err) => println!("Line: {}, {}", self.line_num, err)
+                Err(err) => warnings.push(format!("Line: {} - {}", self.line_num, err))
             }
         }
         return nodes;
     }
 
-    fn parse_node(&mut self) -> Result<dom::Node, String> {
+    fn parse_node(&mut self, warnings: &mut Vec<String>) -> Result<dom::Node, String> {
         match self.next_char() {
             '<' => {
                 if self.starts_with("<!--") {
@@ -35,7 +35,7 @@ impl Parser {
                 } else if self.starts_with("<!") {
                     self.parse_doctype()
                 } else {
-                    self.parse_element()
+                    self.parse_element(warnings)
                 }
             },
             _ => self.parse_text()
@@ -84,7 +84,7 @@ impl Parser {
         Ok(dom::comment(comment))
     }
 
-    fn parse_element(&mut self) -> Result<dom::Node, String> {
+    fn parse_element(&mut self, warnings: &mut Vec<String>) -> Result<dom::Node, String> {
         match self.consume_expected_text("<") {
             Some(e) => return Err(e),
             _ => {}
@@ -93,7 +93,7 @@ impl Parser {
             Ok((tag_name, attributes)) => (tag_name, attributes),
             Err(e) => return Err(e)
         };
-        let children = self.parse_nodes();
+        let children = self.parse_nodes(warnings);
         match self.consume_closing_tag(tag_name.as_str()) {
             Some(e) => return Err(e),
             _ => {}

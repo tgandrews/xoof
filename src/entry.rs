@@ -41,10 +41,15 @@ pub fn entry() {
 
     println!("File path: {}", html_file_path);
     let html = read_source(html_file_path);
-    let dom_tree = html_parser::parse(html);
+    let mut warnings = vec!();
+    let dom_tree = html_parser::parse(html, &mut warnings);
     println!("DOM Tree:");
     for node in &dom_tree {
         println!("{}", node);
+    }
+    println!("Warnings:");
+    for warn in &warnings {
+        println!("{}", warn);
     }
 }
 
