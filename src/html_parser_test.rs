@@ -120,6 +120,15 @@ fn it_parses_coments_with_dashes() {
     }
 }
 
+#[test]
+fn it_parses_cdata () {
+    let node = get_nth_child("<![CDATA[<h1>Hello world]]>".to_string(), 0);
+    match node.node_type {
+        NodeType::CData(c) => assert_eq!(c, "<h1>Hello world"),
+        _ => assert!(false, "Wrong node type")
+    }
+}
+
 fn get_nth_child(text: String, pos: usize) -> Node {
     let mut warnings = vec!();
     let nodes = parse(text, &mut warnings);

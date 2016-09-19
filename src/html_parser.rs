@@ -32,6 +32,8 @@ impl Parser {
             '<' => {
                 if self.starts_with("<!--") {
                     self.parse_comment()
+                } else if self.starts_with("<![CDATA[") {
+                    self.parse_cdata()
                 } else if self.starts_with("<!") {
                     self.parse_doctype()
                 } else {
@@ -82,6 +84,25 @@ impl Parser {
         }
         self.consume_expected_text("-->");
         Ok(dom::comment(comment))
+    }
+
+    fn parse_cdata(&mut self) -> Result<dom::Node, String> {
+        self.consume_expected_text("<![CDATA[");
+        let mut comment = String::new();
+        loop {
+            let partial = self.consume_while(|c| match c {
+                ']' => false,
+                _ => true
+            });
+            comment.push_str(partial.as_str());
+            if self.eof() || self.starts_with("]]>") {
+                break;
+            } else {
+                comment.push(self.consume_char());
+            }
+        }
+        self.consume_expected_text("]]>");
+        Ok(dom::cdata(comment))
     }
 
     fn parse_element(&mut self, warnings: &mut Vec<String>) -> Result<dom::Node, String> {

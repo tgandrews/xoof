@@ -5,6 +5,7 @@ use std::fmt;
 #[derive(Clone)]
 pub enum NodeType {
     Comment(String),
+    CData(String),
     DocType(DocTypeData),
     Element(ElementData),
     Text(String)
@@ -49,7 +50,10 @@ impl Node {
             },
             NodeType::Comment(ref comment) => {
                 "Comment {".to_owned() + comment.as_str() + "}"
-            }
+            },
+            NodeType::CData(ref content) => {
+                "CData {".to_owned() + content.as_str() + "}"
+            },
             NodeType::Element(ref elem) => {
                 let mut output = elem.tag_name.clone();
                 output.push_str(" {");
@@ -94,6 +98,10 @@ pub fn text(data: String) -> Node {
 
 pub fn comment(comment: String) -> Node {
     Node { children: Vec::new(), node_type: NodeType::Comment(comment) }
+}
+
+pub fn cdata(content: String) -> Node {
+    Node { children: Vec::new(), node_type: NodeType::CData(content) }
 }
 
 pub fn element(name: String, attrs: AttrMap, children: Vec<Node>) -> Node {
