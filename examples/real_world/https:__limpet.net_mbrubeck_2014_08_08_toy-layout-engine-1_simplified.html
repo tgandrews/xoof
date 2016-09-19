@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+  <meta charset="utf-8">
+
+  <title>Let's build a browser engine!
+    Part 1: Getting started
+  </title>
+  <meta name="viewport" content="width=device-width">
+  <meta name="author" content="Matt Brubeck">
+
+
+  <link rel="stylesheet" href="/mbrubeck/css/screen.css">
+  <link rel="stylesheet" href="/mbrubeck/css/syntax.css">
+
+  <link rel="shortcut icon" href="/mbrubeck/images/favicon.png">
+</head>
+<body>
+
+<div class="site">
+
+
+  <h1 class="title">
+    <a href="/mbrubeck/">Matt Brubeck</a>
+  </h1>
+
+  <div id="post">
+  <p class="date">08 Aug 2014</p>
+  <h1>Let's build a browser engine!</h1>
+
+    <h2>Part 1: Getting started</h2>
+
+  <p>I&rsquo;m building a toy HTML rendering engine, and I think you should too.  This is
+the first in a series of articles:</p>
+
+<blockquote>
+    <ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      <li>
+        <b>Part 1: Getting started</b>
+
+      </li>
+
+
+
+      <li>
+        <a href="/mbrubeck/2014/08/11/toy-layout-engine-2.html">Part 2: HTML</a>
+      </li>
+
+
+
+      <li>
+        <a href="/mbrubeck/2014/08/13/toy-layout-engine-3-css.html">Part 3: CSS</a>
+      </li>
+
+
+
+      <li>
+        <a href="/mbrubeck/2014/08/23/toy-layout-engine-4-style.html">Part 4: Style</a>
+      </li>
+
+
+
+      <li>
+        <a href="/mbrubeck/2014/09/08/toy-layout-engine-5-boxes.html">Part 5: Boxes</a>
+      </li>
+
+
+
+      <li>
+        <a href="/mbrubeck/2014/09/17/toy-layout-engine-6-block.html">Part 6: Block layout</a>
+      </li>
+
+
+
+
+
+      <li>
+        <a href="/mbrubeck/2014/11/05/toy-layout-engine-7-painting.html">Part 7: Painting 101</a>
+      </li>
+
+
+
+</ul>
+
+</blockquote>
+
+
+<p>The full series will describe the code I&rsquo;ve written, and show how you can make
+your own.  But first, let me explain why.</p>
+
+<h2>You&rsquo;re building a what?</h2>
+
+<p>Let&rsquo;s talk terminology. A <strong>browser engine</strong> is the portion of a web browser
+that works &ldquo;under the hood&rdquo; to fetch a web page from the internet, and
+translate its contents into forms you can read, watch, hear, etc.  Blink,
+Gecko, WebKit, and Trident are browser engines.  In contrast, the the
+browser&rsquo;s own UI&mdash;tabs, toolbar, menu and such&mdash;is called the
+<strong>chrome</strong>.  Firefox and SeaMonkey are two browsers with different <em>chrome</em> but
+the same Gecko <em>engine</em>.</p>
+
+<p>A browser engine includes many sub-components: an HTTP client, an HTML parser,
+a CSS parser, a JavaScript engine (itself composed of parsers, interpreters,
+and compilers), and much more.  Those components involved in parsing web
+formats like HTML and CSS and translating them into what you see on-screen are
+sometimes called the <strong>layout engine</strong> or <strong>rendering engine</strong>.</p>
+
+<h2>Why a &ldquo;toy&rdquo; rendering engine?</h2>
+
+<p>A full-featured browser engine is hugely complex.  Blink, Gecko,
+WebKit&mdash;these are millions of lines of code each.  Even younger,
+simpler rendering engines like <a href="https://github.com/servo/servo/">Servo</a> and <a href="http://weasyprint.org/">WeasyPrint</a> are each
+tens of thousands of lines.  Not the easiest thing for a newcomer to
+comprehend!</p>
+
+<p>Speaking of hugely complex software: If you take a class on compilers or
+operating systems, at some point you will probably create or modify a &ldquo;toy&rdquo;
+compiler or kernel.  This is a simple model designed for learning; it may
+never be run by anyone besides the person who wrote it.  But making a toy
+system is a useful tool for learning how the real thing works.  Even if you
+never build a real-world compiler or kernel, understanding how they work can
+help you make better use of them when writing your own programs.</p>
+
+<p>So, if you want to become a browser developer, or just to understand what
+happens inside a browser engine, why not build a toy one?  Like a toy compiler
+that implements a subset of a &ldquo;real&rdquo; programming language, a toy rendering
+engine could implement a small subset of HTML and CSS.  It won&rsquo;t replace the
+engine in your everyday browser, but should nonetheless illustrate the basic
+steps needed for rendering a simple HTML document.</p>
+
+<h2>Try this at home.</h2>
+
+<p>I hope I&rsquo;ve convinced you to give it a try.  This series will be easiest to
+follow if you already have some solid programming experience and know some
+high
+-level HTML and CSS concepts.  However, if you&rsquo;re just getting started
+with this stuff, or run into things you don&rsquo;t understand, feel free to ask
+questions and I&rsquo;ll try to make it clearer.</p>
+
+<p>Before you start, a few remarks on some choices you can make:</p>
+
+<h2 id="lang">On Programming Languages</h2>
+
+
+<p>You can build a toy layout engine in any programming language.  Really!  Go
+ahead and use a language you know and love.  Or use this as an excuse to learn
+a new language if that sounds like fun.</p>
+
+<p>If you want to start contributing to major browser engines like Gecko or
+WebKit, you might want to work in C++ because it&rsquo;s the main language used in
+those engines, and using it will make it easier to compare your code to
+theirs.</p>
+
+<p>My own toy project, <a href="https://github.com/mbrubeck/robinson">robinson</a>, is written in <a href="http://www.rust-lang.org/">Rust</a>.  I&rsquo;m part
+of the Servo team at Mozilla, so I&rsquo;ve become very fond of Rust programming.
+Plus, one of my goals with this project is to understand more of Servo&rsquo;s
+implementation.  Robinson sometimes uses simplified versions of Servo&rsquo;s data
+structures and code.</p>
+
+<h2>On Libraries and Shortcuts</h2>
+
+<p>In a learning exercise like this, you have to decide whether it&rsquo;s &ldquo;cheating&rdquo;
+to use someone else&rsquo;s code instead of writing your own from scratch.  My
+advice is to write your own code for the parts that you really want to
+understand, but don&rsquo;t be shy about using libraries for everything else.
+Learning how to use a particular library can be a worthwhile exercise in
+itself.</p>
+
+<p>I&rsquo;m writing robinson not just for myself, but also to serve as example code for
+these articles and exercises.  For this and other reasons, I want it to be as
+tiny and self-contained as possible.  So far I&rsquo;ve used no external code except
+for the Rust standard library.  (This also side-steps the minor hassle of
+getting multiple dependencies to build with the same version of Rust while the
+language is still in development.)  This rule isn&rsquo;t set in stone, though.
+For example, I may decide later to use a graphics library rather than write my
+own low-level drawing code.</p>
+
+<p>Another way to avoid writing code is to just leave things out.  For example,
+robinson has no networking code yet; it can only read local files.  In a toy
+program, it&rsquo;s fine to just skip things if you feel like it.  I&rsquo;ll point out
+potential shortcuts like this as I go along, so you can bypass steps that
+don&rsquo;t interest you and jump straight to the good stuff.  You can always fill
+in the gaps later if you change your mind.</p>
+
+<h2>First Step: The DOM</h2>
+
+<p>Are you ready to write some code?  We&rsquo;ll start with something small: data
+structures for the <a href="http://dom.spec.whatwg.org/" title="Document
+Object Model">DOM</a>.  Let&rsquo;s look at robinson&rsquo;s <a href="https://github.com/mbrubeck/robinson/blob/master/src/dom.rs">dom module</a>.</p>
+
+<p>The DOM is a tree of nodes.  A node has zero or more children.  (It also has
+various other attributes and methods, but we can ignore most of those for now.)</p>
+
+
+<p>There are several <a href="http://dom.spec.whatwg.org/#dom-node-nodetype">node types</a>, but for now we will ignore most of them
+and say that a node is either an Element or a Text node.  In a language with
+inheritance these would be subtypes of <code>Node</code>.  In Rust they can be an enum
+(Rust&rsquo;s keyword for a &ldquo;tagged union&rdquo; or &ldquo;sum type&rdquo;):</p>
+
+<p>An element includes a tag name and any number of attributes, which can be
+stored as a map from names to values.  Robinson doesn&rsquo;t support namespaces, so
+it just stores tag and attribute names as simple strings.</p>
+
+<p>Finally, some constructor functions to make it easy to create new nodes:</p>
+
+<p>And that&rsquo;s it!  A full-blown DOM implementation would include a lot more data
+and dozens of methods, but this is all we need to get started.</p>
+
+<h2>Exercises</h2>
+
+<p>These are just a few suggested ways to follow along at home.  <strong>Do the
+exercises that interest you</strong> and skip any that don&rsquo;t.</p>
+
+<ol>
+<li><p>Start a new program in the language of your choice, and write code to
+represent a tree of DOM text nodes and elements.</p></li>
+<li><p>Install the latest version of <a href="http://www.rust-lang.org/">Rust</a>, then download and build
+<a href="https://github.com/mbrubeck/robinson">robinson</a>.  Open up <code>dom.rs</code> and extend <code>NodeType</code> to include
+additional types like comment nodes.</p></li>
+<li><p>Write code to pretty-print a tree of DOM nodes.</p></li>
+</ol>
+
+
+<p>In the <a href="/mbrubeck/2014/08/11/toy-layout-engine-2.html">next article</a>, we&rsquo;ll add a parser that turns HTML source
+code into a tree of these DOM nodes.</p>
+
+<h2>References</h2>
+
+<p>For much more detailed information about browser engine internals, see Tali
+Garsiel&rsquo;s wonderful <a href="http://www.html5rocks.com/en/tutorials/internals/howbrowserswork/">How Browsers Work</a> and its links to further
+resources.</p>
+
+<p>For example code, here&rsquo;s a short list of &ldquo;small&rdquo; open source web rendering
+engines.  Most of them are many times bigger than robinson, but still way
+smaller than Gecko or WebKit.  WebWhirr, at 2000 lines of code, is the only
+other one I would call a &ldquo;toy&rdquo; engine.</p>
+
+<ul>
+<li><a href="https://github.com/philborlin/CSSBox">CSSBox</a> (Java)</li>
+<li><a href="https://github.com/silexlabs/Cocktail">Cocktail</a> (Haxe)</li>
+<li><a href="https://gngr.info/">gngr</a> (Java)</li>
+<li><a href="https://github.com/tordex/litehtml">litehtml</a> (C++)</li>
+<li><a href="https://github.com/admin36/LURE">LURE</a> (Lua)</li>
+<li><a href="http://www.netsurf-browser.org/">NetSurf</a> (C)</li>
+<li><a href="https://github.com/servo/servo/">Servo</a> (Rust)</li>
+<li><a href="http://hsbrowser.wordpress.com/3s-functional-web-browser/">Simple San Simon</a> (Haskell)</li>
+<li><a href="https://github.com/Kozea/WeasyPrint">WeasyPrint</a> (Python)</li>
+<li><a href="https://github.com/reesmichael1/WebWhirr">WebWhirr</a> (C++)</li>
+</ul>
+
+
+<p>You may find these useful for inspiration or reference.  If you know of any
+other similar projects&mdash;or if you start your own&mdash;please let me
+know!</p>
+
+</div>
+
+
+<div id="comments">
+  <h2>Comments</h2>
+  <script>
+  var disqus_developer = 0;
+  var disqus_shortname = '';
+  </script>
+  <div id="disqus_thread"></div><script type="text/javascript" src="//disqus.com/forums/mbrubeck/embed.js"></script><noscript><a href="//disqus.com/forums/mbrubeck/?url=ref">View the discussion thread.</a></noscript><a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+  <script>
+  <!--
+  (function() {
+          var links = document.getElementsByTagName('a');
+          var query = '?';
+          for(var i = 0; i < links.length; i++) {
+          if(links[i].href.indexOf('#disqus_thread') >= 0) {
+                  query += 'url' + i + '=' + encodeURIComponent(links[i].href) + '&';
+          }
+          }
+          document.write('<script charset="utf-8" type="text/javascript" src="//disqus.com/forums/mbrubeck/get_num_replies.js' + query + '"></' + 'script>');
+  })();
+  // -->
+  </script>
+</div>
+
+
+
+
+
+  <div class="footer">
+    <div class="rss">
+      <a href="/mbrubeck/atom.xml">Subscribe</a>
+    </div>
+    <div class="contact">
+      <a href="/mbrubeck/colophon.html">About</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>
