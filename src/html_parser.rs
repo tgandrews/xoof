@@ -185,10 +185,8 @@ impl Parser {
         if first_char != '"' && first_char != '\'' {
             return Err(format!("Expected opening of attribute value but found: {}", first_char));
         }
-        let value = self.consume_while(|c| match c {
-            '"' | '\'' => false,
-            _ => true
-        });
+
+        let value = self.consume_while(|c| c != first_char);
         self.consume_char();
         Ok(value)
     }

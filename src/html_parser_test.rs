@@ -56,6 +56,20 @@ fn it_parses_attributes() {
 }
 
 #[test]
+fn it_parses_attributes_with_quotes() {
+    let node = get_nth_child("<a title=\"here is - 'something'\">Hello</a>".to_string(), 0);
+    match node.node_type {
+        NodeType::Element(e) => {
+            match e.attributes.get("title") {
+                Some(v) => assert_eq!(v, "here is - 'something'"),
+                None => assert!(false, "No title!")
+            };
+        },
+        _ => assert!(false, "Wrong node type")
+    }
+}
+
+#[test]
 fn it_parses_doctype() {
     let node = get_nth_child("<!DOCTYPE html>".to_string(), 0);
     match node.node_type {
