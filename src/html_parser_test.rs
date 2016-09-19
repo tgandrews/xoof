@@ -129,6 +129,15 @@ fn it_parses_cdata () {
     }
 }
 
+#[test]
+fn it_parses_self_closing_tags() {
+    let node = get_nth_child("<h1 /><p>Hello</p>".to_string(), 0);
+    match node.node_type {
+        NodeType::Element(e) => assert_eq!(e.tag_name, "h1"),
+        _ => assert!(false, "Wrong node type")
+    }
+}
+
 fn get_nth_child(text: String, pos: usize) -> Node {
     let mut warnings = vec!();
     let nodes = parse(text, &mut warnings);

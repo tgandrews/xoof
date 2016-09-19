@@ -110,24 +110,26 @@ impl Parser {
             Some(e) => return Err(e),
             _ => {}
         }
-        let (tag_name, attributes) = match self.parse_tag() {
-            Ok((tag_name, attributes)) => (tag_name, attributes),
+        let (tag_name, attributes, self_closed) = match self.parse_tag() {
+            Ok((tag_name, attributes, self_closed)) => (tag_name, attributes, self_closed),
             Err(e) => return Err(e)
         };
-        let children = if !self.is_self_closing(tag_name.as_str()) {
+        let closed = self_closed || self.is_self_closing(tag_name.as_str());
+        let children = if !closed {
             self.parse_nodes(warnings)
         } else {
             vec!()
         };
-        match self.consume_closing_tag(tag_name.as_str()) {
-            Some(e) => return Err(e),
-            _ => {}
+        if !closed {
+            match self.consume_closing_tag(tag_name.as_str()) {
+                Some(e) => return Err(e),
+                _ => {}
+            }
         }
-        self.consume_whitespace();
         Ok(dom::element(tag_name, attributes, children))
     }
 
-    fn parse_tag(&mut self) -> Result<(String, dom::AttrMap), String> {
+    fn parse_tag(&mut self) -> Result<(String, dom::AttrMap, bool), String> {
         let tag_name = self.parse_tag_name();
         let attributes = match self.parse_attributes() {
             Ok(atts) => atts,
@@ -135,10 +137,11 @@ impl Parser {
         };
 
         self.consume_whitespace();
-        let ending_len = if self.starts_with("/") { 2 } else { 1 };
+        let self_closing = self.starts_with("/");
+        let ending_len = if self_closing { 2 } else { 1 };
         let ending = self.consume_next_n_chars(ending_len);
         if ending.ends_with(">") {
-            Ok((tag_name, attributes))
+            Ok((tag_name, attributes, self_closing))
         } else {
             Err(format!("Expected end of tag but found: {}", ending))
         }
