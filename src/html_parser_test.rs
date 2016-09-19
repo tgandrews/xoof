@@ -138,10 +138,23 @@ fn it_parses_self_closing_tags() {
     }
 }
 
+#[test]
+fn child_should_close_if_parent_closed() {
+    let node = get_nth_child("<ul><li>Hello</ul>".to_string(), 0);
+    let ref child = node.children[0];
+    match &child.node_type {
+        &NodeType::Element(ref e) => assert_eq!(e.tag_name, "li"),
+        _ => assert!(false, "Wrong node type")
+    }
+}
+
 fn get_nth_child(text: String, pos: usize) -> Node {
     let mut warnings = vec!();
     let nodes = parse(text, &mut warnings);
-    let node = nodes[pos].clone();
+    for warn in &warnings {
+        println!("Warn: {}", warn)
+    }
     assert_eq!(warnings.len(), 0, "No warnings expected");
+    let node = nodes[pos].clone();
     return node;
 }

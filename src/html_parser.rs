@@ -1,14 +1,15 @@
 use dom;
 
 pub fn parse(html: String, warnings: &mut Vec<String>) -> Vec<dom::Node> {
-    let mut parser = Parser { pos: 0, input: html, line_num: 1 };
+    let mut parser = Parser { pos: 0, input: html, line_num: 1, stack: vec!() };
     parser.parse_nodes(warnings)
 }
 
 struct Parser {
     pos: usize,
     input: String,
-    line_num: usize
+    line_num: usize,
+    stack: Vec<String>
 }
 
 impl Parser {
@@ -115,12 +116,11 @@ impl Parser {
             Err(e) => return Err(e)
         };
         let closed = self_closed || self.is_self_closing(tag_name.as_str());
-        let children = if !closed {
-            self.parse_nodes(warnings)
-        } else {
-            vec!()
-        };
+        let mut children = vec!();
         if !closed {
+            self.stack.push(tag_name.clone());
+            children = self.parse_nodes(warnings);
+            self.stack.pop();
             match self.consume_closing_tag(tag_name.as_str()) {
                 Some(e) => return Err(e),
                 _ => {}
@@ -194,11 +194,28 @@ impl Parser {
     }
 
     fn consume_closing_tag(&mut self, tag_name: &str) -> Option<String> {
-        if self.is_self_closing(tag_name) {
+        let starting_pos = self.pos.clone();
+        match self.consume_expected_text("</") {
+            Some(e) => return Some(e),
+            _ => {}
+        }
+        let closing_tag_name = self.parse_tag_name();
+        self.consume_whitespace();
+        match self.consume_expected_text(">") {
+            Some(e) => return Some(e),
+            _ => {}
+        }
+        if closing_tag_name == tag_name {
             None
         } else {
-            let closing_tag = "</".to_owned() + tag_name + ">";
-            self.consume_expected_text(closing_tag.as_str())
+            for parent_tag_name in &self.stack {
+                if &closing_tag_name == parent_tag_name {
+                    self.pos = starting_pos;
+                    return None;
+                }
+            }
+            Some(format!("Expected closing tag for: {} but found closing tag for: {} which is not in the stack: {:?}",
+                tag_name, closing_tag_name, self.stack))
         }
     }
 
