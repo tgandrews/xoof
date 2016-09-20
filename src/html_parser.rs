@@ -55,21 +55,24 @@ impl Parser {
 
     fn parse_doctype(&mut self) -> Result<dom::Node, String> {
         match self.consume_expected_text("<!DOCTYPE") {
-            Some(e) => return Err(e),
-            None => {}
+            Err(e) => return Err(e),
+            _ => {}
         }
         self.consume_whitespace();
         let version = self.consume_alphanumeric_word();
         self.consume_whitespace();
         match self.consume_expected_text(">") {
-            Some(e) => return Err(e),
-            None => {}
+            Err(e) => return Err(e),
+            _ => {}
         }
         Ok(dom::doctype(version))
     }
 
     fn parse_comment(&mut self) -> Result<dom::Node, String> {
-        self.consume_expected_text("<!--");
+        match self.consume_expected_text("<!--") {
+            Err(e) => return Err(e),
+            _ => {}
+        };
         let mut comment = String::new();
         loop {
             let partial = self.consume_while(|c| match c {
@@ -83,12 +86,18 @@ impl Parser {
                 comment.push(self.consume_char());
             }
         }
-        self.consume_expected_text("-->");
+        match self.consume_expected_text("-->") {
+            Err(e) => return Err(e),
+            _ => {}
+        };
         Ok(dom::comment(comment))
     }
 
     fn parse_cdata(&mut self) -> Result<dom::Node, String> {
-        self.consume_expected_text("<![CDATA[");
+        match self.consume_expected_text("<![CDATA[") {
+            Err(e) => return Err(e),
+            _ => {}
+        }
         let mut comment = String::new();
         loop {
             let partial = self.consume_while(|c| match c {
@@ -102,13 +111,16 @@ impl Parser {
                 comment.push(self.consume_char());
             }
         }
-        self.consume_expected_text("]]>");
+        match self.consume_expected_text("]]>") {
+            Err(e) => return Err(e),
+            _ => {}
+        }
         Ok(dom::cdata(comment))
     }
 
     fn parse_element(&mut self, warnings: &mut Vec<String>) -> Result<dom::Node, String> {
         match self.consume_expected_text("<") {
-            Some(e) => return Err(e),
+            Err(e) => return Err(e),
             _ => {}
         }
         let (tag_name, attributes, self_closed) = match self.parse_tag() {
@@ -122,7 +134,7 @@ impl Parser {
             children = self.parse_nodes(warnings);
             self.stack.pop();
             match self.consume_closing_tag(tag_name.as_str()) {
-                Some(e) => return Err(e),
+                Err(e) => return Err(e),
                 _ => {}
             }
         }
@@ -191,28 +203,28 @@ impl Parser {
         Ok(value)
     }
 
-    fn consume_closing_tag(&mut self, tag_name: &str) -> Option<String> {
+    fn consume_closing_tag(&mut self, tag_name: &str) -> Result<(), String> {
         let starting_pos = self.pos.clone();
         match self.consume_expected_text("</") {
-            Some(e) => return Some(e),
+            Err(e) => return Err(e),
             _ => {}
         }
         let closing_tag_name = self.parse_tag_name();
         self.consume_whitespace();
         match self.consume_expected_text(">") {
-            Some(e) => return Some(e),
+            Err(e) => return Err(e),
             _ => {}
         }
         if closing_tag_name == tag_name {
-            None
+            Ok(())
         } else {
             for parent_tag_name in &self.stack {
                 if &closing_tag_name == parent_tag_name {
                     self.pos = starting_pos;
-                    return None;
+                    return Ok(());
                 }
             }
-            Some(format!("Expected closing tag for: {} but found closing tag for: {} which is not in the stack: {:?}",
+            Err(format!("Expected closing tag for: {} but found closing tag for: {} which is not in the stack: {:?}",
                 tag_name, closing_tag_name, self.stack))
         }
     }
@@ -232,16 +244,16 @@ impl Parser {
         self.input[self.pos..].chars().next().unwrap()
     }
 
-    fn consume_expected_text(&mut self, text: &str) -> Option<String> {
+    fn consume_expected_text(&mut self, text: &str) -> Result<(), String> {
         if !self.starts_with(text) {
             let value = self.consume_next_n_chars(text.len());
-            Some(format!("Expected: {} Found: {}", text, value))
+            Err(format!("Expected: {} Found: {}", text, value))
         } else {
             let length = text.len();
             for _ in 0..length {
                 self.consume_char();
             }
-            None
+            Ok(())
         }
     }
 
