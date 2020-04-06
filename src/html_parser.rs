@@ -1,7 +1,12 @@
 use dom;
 
 pub fn parse(html: String, warnings: &mut Vec<String>) -> Vec<dom::Node> {
-    let mut parser = Parser { pos: 0, input: html, line_num: 1, stack: vec!() };
+    let mut parser = Parser {
+        pos: 0,
+        input: html,
+        line_num: 1,
+        stack: vec![],
+    };
     parser.parse_nodes(warnings)
 }
 
@@ -9,12 +14,12 @@ struct Parser {
     pos: usize,
     input: String,
     line_num: usize,
-    stack: Vec<String>
+    stack: Vec<String>,
 }
 
 impl Parser {
     fn parse_nodes(&mut self, warnings: &mut Vec<String>) -> Vec<dom::Node> {
-        let mut nodes = vec!();
+        let mut nodes = vec![];
         loop {
             self.consume_whitespace();
             if self.eof() || self.starts_with("</") {
@@ -22,7 +27,7 @@ impl Parser {
             }
             match self.parse_node(warnings) {
                 Ok(node) => nodes.push(node),
-                Err(err) => warnings.push(format!("Line: {} - {}", self.line_num, err))
+                Err(err) => warnings.push(format!("Line: {} - {}", self.line_num, err)),
             }
         }
         return nodes;
@@ -40,15 +45,15 @@ impl Parser {
                 } else {
                     self.parse_element(warnings)
                 }
-            },
-            _ => self.parse_text()
+            }
+            _ => self.parse_text(),
         }
     }
 
     fn parse_text(&mut self) -> Result<dom::Node, String> {
         let text = self.consume_while(|c| match c {
             '<' => false,
-            _ => true
+            _ => true,
         });
         Ok(dom::text(text))
     }
@@ -77,7 +82,7 @@ impl Parser {
         loop {
             let partial = self.consume_while(|c| match c {
                 '-' => false,
-                _ => true
+                _ => true,
             });
             comment.push_str(partial.as_str());
             if self.eof() || self.starts_with("-->") {
@@ -102,7 +107,7 @@ impl Parser {
         loop {
             let partial = self.consume_while(|c| match c {
                 ']' => false,
-                _ => true
+                _ => true,
             });
             comment.push_str(partial.as_str());
             if self.eof() || self.starts_with("]]>") {
@@ -125,10 +130,10 @@ impl Parser {
         }
         let (tag_name, attributes, self_closed) = match self.parse_tag() {
             Ok((tag_name, attributes, self_closed)) => (tag_name, attributes, self_closed),
-            Err(e) => return Err(e)
+            Err(e) => return Err(e),
         };
         let closed = self_closed || self.is_self_closing(tag_name.as_str());
-        let mut children = vec!();
+        let mut children = vec![];
         if !closed {
             self.stack.push(tag_name.clone());
             children = self.parse_nodes(warnings);
@@ -145,7 +150,7 @@ impl Parser {
         let tag_name = self.parse_tag_name();
         let attributes = match self.parse_attributes() {
             Ok(atts) => atts,
-            Err(e) => return Err(e)
+            Err(e) => return Err(e),
         };
 
         self.consume_whitespace();
@@ -164,7 +169,7 @@ impl Parser {
         self.consume_alphanumeric_word()
     }
 
-    fn parse_attributes(&mut self) ->  Result<dom::AttrMap, String> {
+    fn parse_attributes(&mut self) -> Result<dom::AttrMap, String> {
         let mut attrs = dom::AttrMap::new();
         loop {
             self.consume_whitespace();
@@ -174,11 +179,14 @@ impl Parser {
             let name = self.parse_attribute_name();
             let next_char = self.consume_char();
             if next_char != '=' {
-                return Err(format!("Unexpected char in attribute parsing Expected: = found: {}", next_char));
+                return Err(format!(
+                    "Unexpected char in attribute parsing Expected: = found: {}",
+                    next_char
+                ));
             }
             let value = match self.parse_attribute_value() {
                 Ok(v) => v,
-                Err(e) => return Err(e)
+                Err(e) => return Err(e),
             };
             attrs.insert(name, value);
         }
@@ -187,15 +195,18 @@ impl Parser {
 
     fn parse_attribute_name(&mut self) -> String {
         self.consume_while(|c| match c {
-            'a'...'z' | 'A'...'Z' | '0'...'9' | '-' | '_' => true,
-            _ => false
+            'a'..='z' | 'A'..='Z' | '0'..='9' | '-' | '_' => true,
+            _ => false,
         })
     }
 
     fn parse_attribute_value(&mut self) -> Result<String, String> {
         let first_char = self.consume_char();
         if first_char != '"' && first_char != '\'' {
-            return Err(format!("Expected opening of attribute value but found: {}", first_char));
+            return Err(format!(
+                "Expected opening of attribute value but found: {}",
+                first_char
+            ));
         }
 
         let value = self.consume_while(|c| c != first_char);
@@ -232,7 +243,7 @@ impl Parser {
     fn is_self_closing(&self, tag_name: &str) -> bool {
         match tag_name {
             "link" | "meta" => true,
-            _ => false
+            _ => false,
         }
     }
 
@@ -270,8 +281,8 @@ impl Parser {
 
     fn consume_alphanumeric_word(&mut self) -> String {
         self.consume_while(|c| match c {
-            'a'...'z' | 'A'...'Z' | '0'...'9' => true,
-            _ => false
+            'a'..='z' | 'A'..='Z' | '0'..='9' => true,
+            _ => false,
         })
     }
 
@@ -280,7 +291,9 @@ impl Parser {
     }
 
     fn consume_while<F>(&mut self, test: F) -> String
-        where F: Fn(char) -> bool {
+    where
+        F: Fn(char) -> bool,
+    {
         let mut result = String::new();
         while !self.eof() && test(self.next_char()) {
             result.push(self.consume_char());
