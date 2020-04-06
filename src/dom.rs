@@ -1,33 +1,29 @@
-use std::collections::{HashMap};
+use std::collections::HashMap;
 use std::fmt;
 
-#[derive(Debug)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum NodeType {
     Comment(String),
     CData(String),
     DocType(DocTypeData),
     Element(ElementData),
-    Text(String)
+    Text(String),
 }
 
-#[derive(Debug)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct ElementData {
     pub tag_name: String,
     pub attributes: AttrMap,
 }
 
-#[derive(Debug)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct DocTypeData {
-    pub version: String
+    pub version: String,
 }
 
 pub type AttrMap = HashMap<String, String>;
 
-#[derive(Debug)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Node {
     pub children: Vec<Node>,
     pub node_type: NodeType,
@@ -42,18 +38,10 @@ impl fmt::Display for Node {
 impl Node {
     fn pretty_print(&self, depth: usize) -> String {
         let tag = match self.node_type {
-            NodeType::Text(ref content) => {
-                "Text {".to_owned() + content.as_str() + "}"
-            },
-            NodeType::DocType(ref elem) => {
-                "DocType {".to_owned() + elem.version.as_str() + "}"
-            },
-            NodeType::Comment(ref comment) => {
-                "Comment {".to_owned() + comment.as_str() + "}"
-            },
-            NodeType::CData(ref content) => {
-                "CData {".to_owned() + content.as_str() + "}"
-            },
+            NodeType::Text(ref content) => "Text {".to_owned() + content.as_str() + "}",
+            NodeType::DocType(ref elem) => "DocType {".to_owned() + elem.version.as_str() + "}",
+            NodeType::Comment(ref comment) => "Comment {".to_owned() + comment.as_str() + "}",
+            NodeType::CData(ref content) => "CData {".to_owned() + content.as_str() + "}",
             NodeType::Element(ref elem) => {
                 let mut output = elem.tag_name.clone();
                 output.push_str(" {");
@@ -85,23 +73,32 @@ impl Node {
     }
 }
 
-
 pub fn doctype(version: String) -> Node {
-    Node { children: Vec::new(), node_type: NodeType::DocType(DocTypeData {
-        version: version
-    })}
+    Node {
+        children: Vec::new(),
+        node_type: NodeType::DocType(DocTypeData { version: version }),
+    }
 }
 
 pub fn text(data: String) -> Node {
-    Node { children: Vec::new(), node_type: NodeType::Text(data) }
+    Node {
+        children: Vec::new(),
+        node_type: NodeType::Text(data),
+    }
 }
 
 pub fn comment(comment: String) -> Node {
-    Node { children: Vec::new(), node_type: NodeType::Comment(comment) }
+    Node {
+        children: Vec::new(),
+        node_type: NodeType::Comment(comment),
+    }
 }
 
 pub fn cdata(content: String) -> Node {
-    Node { children: Vec::new(), node_type: NodeType::CData(content) }
+    Node {
+        children: Vec::new(),
+        node_type: NodeType::CData(content),
+    }
 }
 
 pub fn element(name: String, attrs: AttrMap, children: Vec<Node>) -> Node {
@@ -110,6 +107,6 @@ pub fn element(name: String, attrs: AttrMap, children: Vec<Node>) -> Node {
         node_type: NodeType::Element(ElementData {
             tag_name: name,
             attributes: attrs,
-        })
+        }),
     }
 }

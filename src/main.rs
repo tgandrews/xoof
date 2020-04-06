@@ -1,8 +1,8 @@
 extern crate getopts;
 
 pub mod dom;
-pub mod html_parser;
 mod entry;
+pub mod html_parser;
 
 #[cfg(test)]
 mod html_parser_test;
