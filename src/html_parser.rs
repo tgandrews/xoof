@@ -1,46 +1,43 @@
 use dom;
+use parser;
 
 pub fn parse(html: String, warnings: &mut Vec<String>) -> Vec<dom::Node> {
-    let mut parser = Parser {
-        pos: 0,
-        input: html,
-        line_num: 1,
+    let mut parser = HTMLParser {
+        parser: parser::create(html),
         stack: vec![],
     };
     parser.parse_nodes(warnings)
 }
 
-struct Parser {
-    pos: usize,
-    input: String,
-    line_num: usize,
+struct HTMLParser {
+    parser: parser::Parser,
     stack: Vec<String>,
 }
 
-impl Parser {
+impl HTMLParser {
     fn parse_nodes(&mut self, warnings: &mut Vec<String>) -> Vec<dom::Node> {
         let mut nodes = vec![];
         loop {
-            self.consume_whitespace();
-            if self.eof() || self.starts_with("</") {
+            self.parser.consume_whitespace();
+            if self.parser.eof() || self.parser.starts_with("</") {
                 break;
             }
             match self.parse_node(warnings) {
                 Ok(node) => nodes.push(node),
-                Err(err) => warnings.push(format!("Line: {} - {}", self.line_num, err)),
+                Err(err) => warnings.push(format!("Line: {} - {}", self.parser.line_number, err)),
             }
         }
         return nodes;
     }
 
     fn parse_node(&mut self, warnings: &mut Vec<String>) -> Result<dom::Node, String> {
-        match self.next_char() {
+        match self.parser.next_char() {
             '<' => {
-                if self.starts_with("<!--") {
+                if self.parser.starts_with("<!--") {
                     self.parse_comment()
-                } else if self.starts_with("<![CDATA[") {
+                } else if self.parser.starts_with("<![CDATA[") {
                     self.parse_cdata()
-                } else if self.starts_with("<!") {
+                } else if self.parser.starts_with("<!") {
                     self.parse_doctype()
                 } else {
                     self.parse_element(warnings)
@@ -51,7 +48,7 @@ impl Parser {
     }
 
     fn parse_text(&mut self) -> Result<dom::Node, String> {
-        let text = self.consume_while(|c| match c {
+        let text = self.parser.consume_while(|c| match c {
             '<' => false,
             _ => true,
         });
@@ -59,14 +56,14 @@ impl Parser {
     }
 
     fn parse_doctype(&mut self) -> Result<dom::Node, String> {
-        match self.consume_expected_text("<!DOCTYPE") {
+        match self.parser.consume_expected_text("<!DOCTYPE") {
             Err(e) => return Err(e),
             _ => {}
         }
-        self.consume_whitespace();
-        let version = self.consume_alphanumeric_word();
-        self.consume_whitespace();
-        match self.consume_expected_text(">") {
+        self.parser.consume_whitespace();
+        let version = self.parser.consume_alphanumeric_word();
+        self.parser.consume_whitespace();
+        match self.parser.consume_expected_text(">") {
             Err(e) => return Err(e),
             _ => {}
         }
@@ -74,24 +71,24 @@ impl Parser {
     }
 
     fn parse_comment(&mut self) -> Result<dom::Node, String> {
-        match self.consume_expected_text("<!--") {
+        match self.parser.consume_expected_text("<!--") {
             Err(e) => return Err(e),
             _ => {}
         };
         let mut comment = String::new();
         loop {
-            let partial = self.consume_while(|c| match c {
+            let partial = self.parser.consume_while(|c| match c {
                 '-' => false,
                 _ => true,
             });
             comment.push_str(partial.as_str());
-            if self.eof() || self.starts_with("-->") {
+            if self.parser.eof() || self.parser.starts_with("-->") {
                 break;
             } else {
-                comment.push(self.consume_char());
+                comment.push(self.parser.consume_char());
             }
         }
-        match self.consume_expected_text("-->") {
+        match self.parser.consume_expected_text("-->") {
             Err(e) => return Err(e),
             _ => {}
         };
@@ -99,24 +96,24 @@ impl Parser {
     }
 
     fn parse_cdata(&mut self) -> Result<dom::Node, String> {
-        match self.consume_expected_text("<![CDATA[") {
+        match self.parser.consume_expected_text("<![CDATA[") {
             Err(e) => return Err(e),
             _ => {}
         }
         let mut comment = String::new();
         loop {
-            let partial = self.consume_while(|c| match c {
+            let partial = self.parser.consume_while(|c| match c {
                 ']' => false,
                 _ => true,
             });
             comment.push_str(partial.as_str());
-            if self.eof() || self.starts_with("]]>") {
+            if self.parser.eof() || self.parser.starts_with("]]>") {
                 break;
             } else {
-                comment.push(self.consume_char());
+                comment.push(self.parser.consume_char());
             }
         }
-        match self.consume_expected_text("]]>") {
+        match self.parser.consume_expected_text("]]>") {
             Err(e) => return Err(e),
             _ => {}
         }
@@ -124,7 +121,7 @@ impl Parser {
     }
 
     fn parse_element(&mut self, warnings: &mut Vec<String>) -> Result<dom::Node, String> {
-        match self.consume_expected_text("<") {
+        match self.parser.consume_expected_text("<") {
             Err(e) => return Err(e),
             _ => {}
         }
@@ -153,10 +150,10 @@ impl Parser {
             Err(e) => return Err(e),
         };
 
-        self.consume_whitespace();
-        let self_closing = self.starts_with("/");
+        self.parser.consume_whitespace();
+        let self_closing = self.parser.starts_with("/");
         let ending_len = if self_closing { 2 } else { 1 };
-        let ending = self.consume_next_n_chars(ending_len);
+        let ending = self.parser.consume_next_n_chars(ending_len);
         if ending.ends_with(">") {
             Ok((tag_name, attributes, self_closing))
         } else {
@@ -165,19 +162,19 @@ impl Parser {
     }
 
     fn parse_tag_name(&mut self) -> String {
-        self.consume_whitespace();
-        self.consume_alphanumeric_word()
+        self.parser.consume_whitespace();
+        self.parser.consume_alphanumeric_word()
     }
 
     fn parse_attributes(&mut self) -> Result<dom::AttrMap, String> {
         let mut attrs = dom::AttrMap::new();
         loop {
-            self.consume_whitespace();
-            if self.next_char() == '>' || self.next_char() == '/' {
+            self.parser.consume_whitespace();
+            if self.parser.next_char() == '>' || self.parser.next_char() == '/' {
                 break;
             }
             let name = self.parse_attribute_name();
-            let next_char = self.consume_char();
+            let next_char = self.parser.consume_char();
             if next_char != '=' {
                 return Err(format!(
                     "Unexpected char in attribute parsing Expected: = found: {}",
@@ -194,14 +191,14 @@ impl Parser {
     }
 
     fn parse_attribute_name(&mut self) -> String {
-        self.consume_while(|c| match c {
+        self.parser.consume_while(|c| match c {
             'a'..='z' | 'A'..='Z' | '0'..='9' | '-' | '_' => true,
             _ => false,
         })
     }
 
     fn parse_attribute_value(&mut self) -> Result<String, String> {
-        let first_char = self.consume_char();
+        let first_char = self.parser.consume_char();
         if first_char != '"' && first_char != '\'' {
             return Err(format!(
                 "Expected opening of attribute value but found: {}",
@@ -209,20 +206,20 @@ impl Parser {
             ));
         }
 
-        let value = self.consume_while(|c| c != first_char);
-        self.consume_char();
+        let value = self.parser.consume_while(|c| c != first_char);
+        self.parser.consume_char();
         Ok(value)
     }
 
     fn consume_closing_tag(&mut self, tag_name: &str) -> Result<(), String> {
-        let starting_pos = self.pos.clone();
-        match self.consume_expected_text("</") {
+        let starting_pos = self.parser.position.clone();
+        match self.parser.consume_expected_text("</") {
             Err(e) => return Err(e),
             _ => {}
         }
         let closing_tag_name = self.parse_tag_name();
-        self.consume_whitespace();
-        match self.consume_expected_text(">") {
+        self.parser.consume_whitespace();
+        match self.parser.consume_expected_text(">") {
             Err(e) => return Err(e),
             _ => {}
         }
@@ -231,7 +228,7 @@ impl Parser {
         } else {
             for parent_tag_name in &self.stack {
                 if &closing_tag_name == parent_tag_name {
-                    self.pos = starting_pos;
+                    self.parser.position = starting_pos;
                     return Ok(());
                 }
             }
@@ -245,74 +242,5 @@ impl Parser {
             "link" | "meta" => true,
             _ => false,
         }
-    }
-
-    fn starts_with(&self, text: &str) -> bool {
-        self.input[self.pos..].starts_with(text)
-    }
-
-    fn next_char(&self) -> char {
-        self.input[self.pos..].chars().next().unwrap()
-    }
-
-    fn consume_expected_text(&mut self, text: &str) -> Result<(), String> {
-        if !self.starts_with(text) {
-            let value = self.consume_next_n_chars(text.len());
-            Err(format!("Expected: {} Found: {}", text, value))
-        } else {
-            let length = text.len();
-            for _ in 0..length {
-                self.consume_char();
-            }
-            Ok(())
-        }
-    }
-
-    fn consume_next_n_chars(&mut self, len: usize) -> String {
-        let mut value = String::new();
-        for _ in 0..len {
-            if self.eof() {
-                break;
-            }
-            value.push(self.consume_char());
-        }
-        return value;
-    }
-
-    fn consume_alphanumeric_word(&mut self) -> String {
-        self.consume_while(|c| match c {
-            'a'..='z' | 'A'..='Z' | '0'..='9' => true,
-            _ => false,
-        })
-    }
-
-    fn consume_whitespace(&mut self) {
-        self.consume_while(char::is_whitespace);
-    }
-
-    fn consume_while<F>(&mut self, test: F) -> String
-    where
-        F: Fn(char) -> bool,
-    {
-        let mut result = String::new();
-        while !self.eof() && test(self.next_char()) {
-            result.push(self.consume_char());
-        }
-        return result;
-    }
-
-    fn consume_char(&mut self) -> char {
-        let mut iter = self.input[self.pos..].char_indices();
-        let (_, cur_char) = iter.next().unwrap();
-        let (char_len, _) = iter.next().unwrap_or((1, ' '));
-        self.pos += char_len;
-        if cur_char == '\n' {
-            self.line_num += 1;
-        }
-        return cur_char;
-    }
-
-    fn eof(&self) -> bool {
-        self.pos >= self.input.len()
     }
 }
