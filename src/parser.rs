@@ -1,24 +1,47 @@
+use std::fmt;
+
+#[derive(Debug, Clone, Copy)]
+pub struct ParserPosition {
+  overall: usize,
+  x: usize,
+  y: usize,
+}
+
+impl fmt::Display for ParserPosition {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "{}:{}  ({})", self.y, self.x, self.overall)
+  }
+}
+
 pub struct Parser {
-  pub position: usize,
-  pub line_number: usize,
+  position: ParserPosition,
   text: String,
+  save_point: Option<ParserPosition>,
 }
 
 pub fn create(text: String) -> Parser {
   Parser {
-    position: 0,
-    line_number: 1,
+    position: ParserPosition {
+      overall: 0,
+      x: 0,
+      y: 1,
+    },
     text: text,
+    save_point: None,
   }
 }
 
 impl Parser {
+  pub fn position(&self) -> ParserPosition {
+    self.position
+  }
+
   pub fn starts_with(&self, text: &str) -> bool {
-    self.text[self.position..].starts_with(text)
+    self.text[self.position.overall..].starts_with(text)
   }
 
   pub fn next_char(&self) -> char {
-    self.text[self.position..].chars().next().unwrap()
+    self.text[self.position.overall..].chars().next().unwrap()
   }
 
   pub fn consume_expected_text(&mut self, text: &str) -> Result<(), String> {
@@ -68,17 +91,28 @@ impl Parser {
   }
 
   pub fn consume_char(&mut self) -> char {
-    let mut iter = self.text[self.position..].char_indices();
+    let mut iter = self.text[self.position.overall..].char_indices();
     let (_, cur_char) = iter.next().unwrap();
     let (char_len, _) = iter.next().unwrap_or((1, ' '));
-    self.position += char_len;
+    self.position.overall += char_len;
+    self.position.x += char_len;
     if cur_char == '\n' {
-      self.line_number += 1;
+      self.position.y += 1;
+      self.position.x = 0;
     }
     return cur_char;
   }
 
   pub fn eof(&self) -> bool {
-    self.position >= self.text.len()
+    self.position.overall >= self.text.len()
+  }
+
+  pub fn set_save_point(&mut self) {
+    self.save_point = Some(self.position.clone());
+  }
+
+  pub fn restore_from_save_point(&mut self) {
+    self.position = self.save_point.unwrap();
+    self.save_point = None;
   }
 }

@@ -24,7 +24,7 @@ impl HTMLParser {
             }
             match self.parse_node(warnings) {
                 Ok(node) => nodes.push(node),
-                Err(err) => warnings.push(format!("Line: {} - {}", self.parser.line_number, err)),
+                Err(err) => warnings.push(format!("{} - {}", self.parser.position(), err)),
             }
         }
         return nodes;
@@ -125,11 +125,11 @@ impl HTMLParser {
             Err(e) => return Err(e),
             _ => {}
         }
-        let (tag_name, attributes, self_closed) = match self.parse_tag() {
+        let (tag_name, attributes, has_closed_self) = match self.parse_tag() {
             Ok((tag_name, attributes, self_closed)) => (tag_name, attributes, self_closed),
             Err(e) => return Err(e),
         };
-        let closed = self_closed || self.is_self_closing(tag_name.as_str());
+        let closed = has_closed_self || self.is_self_closing(tag_name.as_str());
         let mut children = vec![];
         if !closed {
             self.stack.push(tag_name.clone());
@@ -151,11 +151,11 @@ impl HTMLParser {
         };
 
         self.parser.consume_whitespace();
-        let self_closing = self.parser.starts_with("/");
-        let ending_len = if self_closing { 2 } else { 1 };
+        let has_closed_self = self.parser.starts_with("/");
+        let ending_len = if has_closed_self { 2 } else { 1 };
         let ending = self.parser.consume_next_n_chars(ending_len);
         if ending.ends_with(">") {
-            Ok((tag_name, attributes, self_closing))
+            Ok((tag_name, attributes, has_closed_self))
         } else {
             Err(format!("Expected end of tag but found: {}", ending))
         }
@@ -212,7 +212,7 @@ impl HTMLParser {
     }
 
     fn consume_closing_tag(&mut self, tag_name: &str) -> Result<(), String> {
-        let starting_pos = self.parser.position.clone();
+        self.parser.set_save_point();
         match self.parser.consume_expected_text("</") {
             Err(e) => return Err(e),
             _ => {}
@@ -224,17 +224,16 @@ impl HTMLParser {
             _ => {}
         }
         if closing_tag_name == tag_name {
-            Ok(())
-        } else {
-            for parent_tag_name in &self.stack {
-                if &closing_tag_name == parent_tag_name {
-                    self.parser.position = starting_pos;
-                    return Ok(());
-                }
-            }
-            Err(format!("Expected closing tag for: {} but found closing tag for: {} which is not in the stack: {:?}",
-                tag_name, closing_tag_name, self.stack))
+            return Ok(());
         }
+        for parent_tag_name in &self.stack {
+            if &closing_tag_name == parent_tag_name {
+                self.parser.restore_from_save_point();
+                return Ok(());
+            }
+        }
+        Err(format!("Expected closing tag for: {} but found closing tag for: {} which is not in the stack: {:?}",
+                tag_name, closing_tag_name, self.stack))
     }
 
     fn is_self_closing(&self, tag_name: &str) -> bool {

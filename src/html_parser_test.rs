@@ -163,11 +163,27 @@ fn it_parses_self_closing_tags() {
 }
 
 #[test]
-fn child_should_close_if_parent_closed() {
+fn it_closes_children_with_parent() {
     let node = get_nth_child("<ul><li>Hello</ul>".to_string(), 0);
     let ref child = node.children[0];
+    println!("hello: {}", node);
     match &child.node_type {
         &NodeType::Element(ref e) => assert_eq!(e.tag_name, "li"),
+        _ => assert!(false, "Wrong node type"),
+    }
+}
+
+#[test]
+fn it_parser_multi_line_self_closing_elements() {
+    let node = get_nth_child(
+        "<div
+    a='1'
+    />"
+        .to_string(),
+        0,
+    );
+    match node.node_type {
+        NodeType::Element(ref e) => assert_eq!(e.tag_name, "div"),
         _ => assert!(false, "Wrong node type"),
     }
 }
