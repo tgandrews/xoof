@@ -49,25 +49,28 @@ pub enum Unit {
 //     a: u8,
 // }
 
-pub fn parse(style_text: String) -> StyleSheet {
+pub fn parse<'a>(style_text: String, warnings: &'a mut Vec<String>) -> StyleSheet {
     let mut parser = CSSParser {
         parser: parser::create(style_text),
+        warnings: warnings,
     };
     return StyleSheet {
         rules: parser.parse_rules(),
     };
 }
 
-struct CSSParser {
+struct CSSParser<'a> {
     parser: parser::Parser,
+    warnings: &'a mut Vec<String>,
 }
 
-impl CSSParser {
+impl<'a> CSSParser<'a> {
     fn parse_rules(&mut self) -> Vec<Rule> {
         let mut rules = vec![];
         while !self.parser.eof() {
             self.parser.consume_whitespace();
             rules.push(self.consume_rule());
+            self.parser.consume_whitespace();
         }
         rules
     }
@@ -92,11 +95,11 @@ impl CSSParser {
                     self.parser.consume_char();
                 }
                 '{' => break,
-                _ => panic!(
-                    "ERROR@{} - Consuming selectors: {}",
+                _ => self.warnings.push(format!(
+                    "Consuming selectors: @{} - {}",
                     self.parser.position(),
                     self.parser.next_char()
-                ),
+                )),
             }
         }
         selectors
@@ -129,41 +132,54 @@ impl CSSParser {
         self.parser.consume_expected_text("{").unwrap();
         while self.parser.next_char() != '}' {
             self.parser.consume_whitespace();
-            declarations.push(self.consume_declaration());
+            match self.consume_declaration() {
+                Ok(declaration) => {
+                    declarations.push(declaration);
+                }
+                Err(e) => {
+                    self.parser.consume_until_including(';');
+                    self.warnings.push(format!("Skipping declaration - {}", e));
+                }
+            }
             self.parser.consume_whitespace();
         }
         self.parser.consume_expected_text("}").unwrap();
         declarations
     }
 
-    fn consume_declaration(&mut self) -> Declaration {
+    fn consume_declaration(&mut self) -> Result<Declaration, String> {
         let name = self.consume_identifier();
         self.parser.consume_whitespace();
         self.parser.consume_expected_text(":").unwrap();
         self.parser.consume_whitespace();
-        let value = self.consume_value();
-        self.parser.consume_whitespace();
-        self.parser.consume_expected_text(";").unwrap();
-        Declaration { name, value }
-    }
-
-    fn consume_value(&mut self) -> Value {
-        match self.parser.next_char() {
-            '0'..='9' => self.consume_length(),
-            _ => panic!(
-                "ERROR@{} - Consuming value: {}",
-                self.parser.position(),
-                self.parser.next_char()
-            ),
+        match self.consume_value() {
+            Ok(value) => {
+                self.parser.consume_whitespace();
+                self.parser.consume_expected_text(";").unwrap();
+                Ok(Declaration { name, value })
+            }
+            Err(e) => Err(e),
         }
     }
 
-    fn consume_length(&mut self) -> Value {
-        println!("Consuming length: {}", self.parser.position());
-        let amount = self.consume_float();
-        let unit = self.consume_unit();
+    fn consume_value(&mut self) -> Result<Value, String> {
+        match self.parser.next_char() {
+            '0'..='9' => self.consume_length(),
+            _ => Err(format!(
+                "ERROR@{} - Consuming value - Invalid character: '{}'",
+                self.parser.position(),
+                self.parser.next_char()
+            )),
+        }
+    }
 
-        Value::Length(amount, unit)
+    fn consume_length(&mut self) -> Result<Value, String> {
+        let amount = self.consume_float();
+
+        match self.consume_unit() {
+            Ok(unit) => Ok(Value::Length(amount, unit)),
+            Err(e) => Err(e),
+        }
     }
 
     fn consume_float(&mut self) -> f32 {
@@ -174,17 +190,17 @@ impl CSSParser {
         text.parse().unwrap()
     }
 
-    fn consume_unit(&mut self) -> Unit {
+    fn consume_unit(&mut self) -> Result<Unit, String> {
         match self.parser.next_char().to_ascii_lowercase() {
             'p' => {
                 self.parser.consume_expected_text("px").unwrap();
-                Unit::Px
+                Ok(Unit::Px)
             }
-            _ => panic!(
-                "ERROR@{} - Consuming unit: {}",
+            _ => Err(format!(
+                "ERROR@{} - Consuming unit found: '{}'",
                 self.parser.position(),
                 self.parser.next_char()
-            ),
+            )),
         }
     }
 

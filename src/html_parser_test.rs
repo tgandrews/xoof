@@ -225,6 +225,10 @@ fn it_parses_docs() {
     let p = Path::new("examples").to_path_buf();
     let files = get_files_in_dir(p);
     for file in files {
+        if !file.to_str().unwrap().ends_with(".html") {
+            continue;
+        }
+
         let mut fh = File::open(&file).unwrap();
         let mut s = String::new();
         fh.read_to_string(&mut s).unwrap();
