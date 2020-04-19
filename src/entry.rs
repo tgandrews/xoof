@@ -3,7 +3,7 @@ use std::env;
 use std::fs::File;
 use std::io::Read;
 
-use html_parser;
+use parser;
 
 fn print_usage(program: &str, opts: Options) {
     let brief = format!("Usage: {} [options]", program);
@@ -48,7 +48,7 @@ pub fn entry() {
     println!("File path: {}", html_file_path);
     let html = read_source(html_file_path);
     let mut warnings = vec![];
-    let dom_tree = html_parser::parse(html, &mut warnings);
+    let dom_tree = parser::html_parser::parse(html, &mut warnings);
     println!("DOM Tree:");
     for node in &dom_tree {
         println!("{}", node);

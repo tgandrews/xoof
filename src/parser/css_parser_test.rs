@@ -1,4 +1,4 @@
-use css_parser::*;
+use parser::css_parser::*;
 use std::fs::read_dir;
 use std::fs::File;
 use std::io::prelude::*;

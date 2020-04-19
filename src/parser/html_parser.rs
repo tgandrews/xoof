@@ -3,14 +3,14 @@ use parser;
 
 pub fn parse(html: String, warnings: &mut Vec<String>) -> Vec<dom::Node> {
     let mut parser = HTMLParser {
-        parser: parser::create(html),
+        parser: parser::parser::create(html),
         stack: vec![],
     };
     parser.parse_nodes(warnings)
 }
 
 struct HTMLParser {
-    parser: parser::Parser,
+    parser: parser::parser::Parser,
     stack: Vec<String>,
 }
 

@@ -26,7 +26,7 @@ pub fn create(text: String) -> Parser {
             x: 0,
             y: 1,
         },
-        text: text,
+        text,
         save_point: None,
     }
 }

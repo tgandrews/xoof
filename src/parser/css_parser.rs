@@ -1,4 +1,4 @@
-use parser;
+use parser::parser;
 
 #[derive(Clone)]
 pub struct StyleSheet {

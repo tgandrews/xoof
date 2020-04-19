@@ -1,5 +1,5 @@
 use dom::*;
-use html_parser::*;
+use parser::html_parser;
 use std::fs::read_dir;
 use std::fs::File;
 use std::io::prelude::*;
@@ -189,7 +189,7 @@ fn it_parser_multi_line_self_closing_elements() {
 
 fn get_nth_child(text: String, pos: usize) -> Node {
     let mut warnings = vec![];
-    let nodes = parse(text, &mut warnings);
+    let nodes = html_parser::parse(text, &mut warnings);
     for warn in &warnings {
         println!("Warn: {}", warn)
     }
@@ -234,7 +234,7 @@ fn it_parses_docs() {
         fh.read_to_string(&mut s).unwrap();
         let mut warnings = vec![];
         println!("Parsing file: {:?}", &file);
-        parse(s, &mut warnings);
+        html_parser::parse(s, &mut warnings);
         for warn in &warnings {
             println!("  {}", warn);
         }
