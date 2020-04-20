@@ -52,7 +52,7 @@ pub enum Unit {
 pub fn parse<'a>(style_text: String, warnings: &'a mut Vec<String>) -> StyleSheet {
     let mut parser = CSSParser {
         parser: parser::create(style_text),
-        warnings: warnings,
+        warnings,
     };
     return StyleSheet {
         rules: parser.parse_rules(),

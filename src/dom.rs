@@ -38,10 +38,10 @@ impl fmt::Display for Node {
 impl Node {
     fn pretty_print(&self, depth: usize) -> String {
         let tag = match self.node_type {
-            NodeType::Text(ref content) => "Text {".to_owned() + content.as_str() + "}",
-            NodeType::DocType(ref elem) => "DocType {".to_owned() + elem.version.as_str() + "}",
-            NodeType::Comment(ref comment) => "Comment {".to_owned() + comment.as_str() + "}",
-            NodeType::CData(ref content) => "CData {".to_owned() + content.as_str() + "}",
+            NodeType::Text(ref content) => String::from("Text {") + content.as_str() + "}",
+            NodeType::DocType(ref elem) => String::from("DocType {") + elem.version.as_str() + "}",
+            NodeType::Comment(ref comment) => String::from("Comment {") + comment.as_str() + "}",
+            NodeType::CData(ref content) => String::from("CData {") + content.as_str() + "}",
             NodeType::Element(ref elem) => {
                 let mut output = elem.tag_name.clone();
                 output.push_str(" {");
@@ -103,7 +103,7 @@ pub fn cdata(content: String) -> Node {
 
 pub fn element(name: String, attrs: AttrMap, children: Vec<Node>) -> Node {
     Node {
-        children: children,
+        children,
         node_type: NodeType::Element(ElementData {
             tag_name: name,
             attributes: attrs,
