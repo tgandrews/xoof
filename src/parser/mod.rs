@@ -6,4 +6,4 @@ pub mod html_parser;
 #[cfg(test)]
 mod html_parser_test;
 
-pub mod parser;
+mod parser;

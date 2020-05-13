@@ -11,19 +11,6 @@ pub enum NodeType {
 }
 
 #[derive(Debug, Clone)]
-pub struct ElementData {
-    pub tag_name: String,
-    pub attributes: AttrMap,
-}
-
-#[derive(Debug, Clone)]
-pub struct DocTypeData {
-    pub version: String,
-}
-
-pub type AttrMap = HashMap<String, String>;
-
-#[derive(Debug, Clone)]
 pub struct Node {
     pub children: Vec<Node>,
     pub node_type: NodeType,
@@ -46,13 +33,13 @@ impl Node {
                 let mut output = elem.tag_name.clone();
                 output.push_str(" {");
                 let mut first = true;
-                for (k, v) in &elem.attributes {
+                for (key, value) in &elem.attributes {
                     if !first {
                         output.push_str(", ");
                     }
-                    output.push_str(k);
+                    output.push_str(key);
                     output.push_str(": \"");
-                    output.push_str(v);
+                    output.push_str(value);
                     output.push_str("\"");
                     first = false;
                 }
@@ -60,10 +47,10 @@ impl Node {
                 output
             }
         };
-        let mut indent = String::new();
-        for _ in 0..depth {
-            indent.push_str("  ");
-        }
+        let indent = (0..depth)
+            .map(|_| String::from(" "))
+            .collect::<Vec<String>>()
+            .join("");
         let mut children_output = String::new();
         let next_depth = depth + 1;
         for child in &self.children {
@@ -72,6 +59,19 @@ impl Node {
         return indent + tag.as_str() + "\n" + children_output.as_str();
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct ElementData {
+    pub tag_name: String,
+    pub attributes: AttrMap,
+}
+
+#[derive(Debug, Clone)]
+pub struct DocTypeData {
+    pub version: String,
+}
+
+pub type AttrMap = HashMap<String, String>;
 
 pub fn doctype(version: String) -> Node {
     Node {

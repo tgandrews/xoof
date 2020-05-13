@@ -1,7 +1,7 @@
 extern crate getopts;
 
-pub mod dom;
 mod entry;
+pub mod om;
 pub mod parser;
 
 fn main() {
