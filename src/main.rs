@@ -1,8 +1,10 @@
 extern crate getopts;
 
+mod cssom;
+mod document;
+mod dom;
 mod entry;
-pub mod om;
-pub mod parser;
+mod parser;
 
 fn main() {
     entry::entry();

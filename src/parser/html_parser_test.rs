@@ -1,4 +1,4 @@
-use om::dom::*;
+use dom::*;
 use parser::html_parser;
 use std::fs::read_dir;
 use std::fs::File;

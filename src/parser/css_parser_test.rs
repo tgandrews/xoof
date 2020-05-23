@@ -1,4 +1,4 @@
-use om::cssom::*;
+use cssom::*;
 use parser::css_parser::*;
 use std::fs::read_dir;
 use std::fs::File;

@@ -1,9 +1,9 @@
-use om::cssom::*;
+use cssom::*;
 use parser::parser;
 
-pub fn parse<'a>(style_text: String, warnings: &'a mut Vec<String>) -> StyleSheet {
+pub fn parse<'a>(css_text: String, warnings: &'a mut Vec<String>) -> StyleSheet {
     let mut parser = CSSParser {
-        parser: parser::create(style_text),
+        parser: parser::create(css_text),
         warnings,
     };
     return StyleSheet {

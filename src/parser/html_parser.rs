@@ -1,4 +1,4 @@
-use om::dom::*;
+use dom::*;
 use parser;
 
 pub fn parse(html: String, warnings: &mut Vec<String>) -> Vec<Node> {

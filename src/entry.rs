@@ -3,7 +3,7 @@ use std::env;
 use std::fs::File;
 use std::io::Read;
 
-use parser;
+use document;
 
 fn print_usage(program: &str, opts: Options) {
     let brief = format!("Usage: {} [options]", program);
@@ -20,6 +20,7 @@ pub fn entry() {
 
     let mut opts = Options::new();
     opts.optopt("h", "html", "set the html file to parse", "[FILE]");
+    opts.optopt("c", "css", "set the css file to parse", "[FILE]");
     opts.optflag("", "help", "print this help menu");
 
     let args: Vec<String> = env::args().collect();
@@ -44,22 +45,34 @@ pub fn entry() {
             return;
         }
     };
+    let css_file_path = match matches.opt_str("c") {
+        Some(p) => p,
+        None => {
+            show_error("Missing css file path");
+            return;
+        }
+    };
 
-    println!("File path: {}", html_file_path);
     let html = read_source(html_file_path);
-    let mut warnings = vec![];
-    let dom_tree = parser::html_parser::parse(html, &mut warnings);
+    let css = read_source(css_file_path);
+
+    let document = document::create_document(html, css);
     println!("DOM Tree:");
-    for node in &dom_tree {
+    for node in document.dom {
         println!("{}", node);
     }
+    println!("CSS:");
+    for style_rule in document.style_sheet.rules {
+        println!("{:#?}", style_rule);
+    }
     println!("Warnings:");
-    for warn in &warnings {
+    for warn in document.warnings {
         println!("{}", warn);
     }
 }
 
 fn read_source(file_path: String) -> String {
+    println!("File path: {}", file_path);
     let mut buffer = String::new();
     File::open(file_path)
         .unwrap()
