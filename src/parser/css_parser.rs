@@ -40,7 +40,9 @@ impl<'a> CSSParser<'a> {
         let mut selectors = vec![];
         loop {
             self.parser.consume_whitespace();
-            selectors.push(Selector::Simple(self.consume_simple_selector()));
+            selectors.push(Selector {
+                selector_type: SelectorType::SimpleSelector(self.consume_simple_selector()),
+            });
             self.parser.consume_whitespace();
             match self.parser.next_char() {
                 ',' => {
@@ -54,11 +56,12 @@ impl<'a> CSSParser<'a> {
                 )),
             }
         }
+        selectors.sort_by(|a, b| a.specificity().cmp(&b.specificity()));
         selectors
     }
 
-    fn consume_simple_selector(&mut self) -> SimpleSelector {
-        let mut selector = SimpleSelector {
+    fn consume_simple_selector(&mut self) -> SimpleSelectorData {
+        let mut selector = SimpleSelectorData {
             tag_name: None,
             id: None,
             class: vec![],

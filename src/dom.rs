@@ -12,7 +12,7 @@ pub enum NodeType {
     Text(String),
 }
 
-type PropertyMap = HashMap<String, cssom::Value>;
+pub type PropertyMap = HashMap<String, cssom::Value>;
 
 #[derive(Debug, Clone)]
 pub struct Node {
@@ -47,7 +47,8 @@ impl Node {
                     output.push_str("\"");
                     first = false;
                 }
-                output.push_str("}");
+                output.push_str("} ");
+                output.push_str(format!("Style {:#?}", elem.style_values).as_str());
                 output
             }
         };

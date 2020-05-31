@@ -10,8 +10,8 @@ fn it_parses_element_selector_with_attribute() {
     let style_sheet = parse_css("div { height: 100px; }".to_string());
     let rule: &Rule = style_sheet.rules.get(0).unwrap();
     let selector: &Selector = rule.selectors.get(0).unwrap();
-    match selector {
-        Selector::Simple(s) => {
+    match &selector.selector_type {
+        SelectorType::SimpleSelector(s) => {
             assert_eq!(s.tag_name.clone().unwrap(), String::from("div"));
         }
     };
@@ -33,8 +33,8 @@ fn it_parses_multiple_attributes() {
     let style_sheet = parse_css("span { height: 100px; width: 50px; }".to_string());
     let rule: &Rule = style_sheet.rules.get(0).unwrap();
     let selector: &Selector = rule.selectors.get(0).unwrap();
-    match selector {
-        Selector::Simple(s) => {
+    match &selector.selector_type {
+        SelectorType::SimpleSelector(s) => {
             assert_eq!(s.tag_name.clone().unwrap(), String::from("span"));
         }
     }

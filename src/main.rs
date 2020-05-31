@@ -5,6 +5,7 @@ mod document;
 mod dom;
 mod entry;
 mod parser;
+mod styling;
 
 fn main() {
     entry::entry();
