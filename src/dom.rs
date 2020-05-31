@@ -1,5 +1,7 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
+
+use super::cssom;
 
 #[derive(Debug, Clone)]
 pub enum NodeType {
@@ -9,6 +11,8 @@ pub enum NodeType {
     Element(ElementData),
     Text(String),
 }
+
+type PropertyMap = HashMap<String, cssom::Value>;
 
 #[derive(Debug, Clone)]
 pub struct Node {
@@ -64,6 +68,26 @@ impl Node {
 pub struct ElementData {
     pub tag_name: String,
     pub attributes: AttrMap,
+    pub style_values: PropertyMap,
+}
+
+impl ElementData {
+    pub fn id(&self) -> Option<&String> {
+        self.attributes.get("id")
+    }
+
+    pub fn class_list(&self) -> HashSet<&str> {
+        match self.attributes.get("class") {
+            Some(class_list) => class_list.split(' ').collect(),
+            None => HashSet::new(),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct TextData {
+    pub text: String,
+    pub style_values: PropertyMap,
 }
 
 #[derive(Debug, Clone)]
@@ -107,6 +131,7 @@ pub fn element(name: String, attrs: AttrMap, children: Vec<Node>) -> Node {
         node_type: NodeType::Element(ElementData {
             tag_name: name,
             attributes: attrs,
+            style_values: HashMap::new(),
         }),
     }
 }

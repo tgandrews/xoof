@@ -57,18 +57,9 @@ pub fn entry() {
     let css = read_source(css_file_path);
 
     let document = document::create_document(html, css);
-    println!("DOM Tree:");
-    for node in document.dom {
-        println!("{}", node);
-    }
-    println!("CSS:");
-    for style_rule in document.style_sheet.rules {
-        println!("{:#?}", style_rule);
-    }
-    println!("Warnings:");
-    for warn in document.warnings {
-        println!("{}", warn);
-    }
+    println!("DOM Tree:\n{}", document.dump_dom_tree());
+    println!("CSS:\n{}", document.dump_styles());
+    println!("Warnings:\n{}", document.dump_warnings());
 }
 
 fn read_source(file_path: String) -> String {
