@@ -49,7 +49,10 @@ fn build_style(element: &ElementData, rules: &Vec<Rule>) -> PropertyMap {
 
     let mut matching_rules = determine_matching_rules(element, &rules);
 
-    matching_rules.sort_by(|&(a, _), &(b, _)| a.cmp(&b));
+    matching_rules.sort_by(|(a, _), (b, _)| {
+        let (result, _) = a.cmp(&b);
+        result
+    });
 
     for (_, rule) in matching_rules {
         for declaration in &rule.declarations {

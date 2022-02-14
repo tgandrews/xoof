@@ -1,8 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 
-use super::cssom;
-
 #[derive(Debug, Clone)]
 pub enum NodeType {
     Comment(String),
@@ -12,7 +10,7 @@ pub enum NodeType {
     Text(String),
 }
 
-pub type PropertyMap = HashMap<String, cssom::Value>;
+pub type PropertyMap = HashMap<String, String>;
 
 #[derive(Debug, Clone)]
 pub struct Node {
@@ -82,6 +80,10 @@ impl ElementData {
             Some(class_list) => class_list.split(' ').collect(),
             None => HashSet::new(),
         }
+    }
+
+    pub fn get_style_value(&self, name: &str) -> Option<String> {
+        self.style_values.get(name).map(|v| v.clone())
     }
 }
 

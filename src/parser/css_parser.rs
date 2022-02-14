@@ -56,7 +56,7 @@ impl<'a> CSSParser<'a> {
                 )),
             }
         }
-        selectors.sort_by(|a, b| a.specificity().cmp(&b.specificity()));
+
         selectors
     }
 
@@ -107,56 +107,14 @@ impl<'a> CSSParser<'a> {
         self.parser.consume_whitespace();
         self.parser.consume_expected_text(":").unwrap();
         self.parser.consume_whitespace();
-        match self.consume_value() {
-            Ok(value) => {
-                self.parser.consume_whitespace();
-                self.parser.consume_expected_text(";").unwrap();
-                Ok(Declaration { name, value })
-            }
-            Err(e) => Err(e),
-        }
+        let value = self.consume_value();
+        Ok(Declaration { name, value })
     }
 
-    fn consume_value(&mut self) -> Result<Value, String> {
-        match self.parser.next_char() {
-            '0'..='9' => self.consume_length(),
-            _ => Err(format!(
-                "ERROR@{} - Consuming value - Invalid character: '{}'",
-                self.parser.position(),
-                self.parser.next_char()
-            )),
-        }
-    }
-
-    fn consume_length(&mut self) -> Result<Value, String> {
-        let amount = self.consume_float();
-
-        match self.consume_unit() {
-            Ok(unit) => Ok(Value::Length(amount, unit)),
-            Err(e) => Err(e),
-        }
-    }
-
-    fn consume_float(&mut self) -> f32 {
-        let text = self.parser.consume_while(|c| match c {
-            '0'..='9' | '.' => true,
-            _ => false,
-        });
-        text.parse().unwrap()
-    }
-
-    fn consume_unit(&mut self) -> Result<Unit, String> {
-        match self.parser.next_char().to_ascii_lowercase() {
-            'p' => {
-                self.parser.consume_expected_text("px").unwrap();
-                Ok(Unit::Px)
-            }
-            _ => Err(format!(
-                "ERROR@{} - Consuming unit found: '{}'",
-                self.parser.position(),
-                self.parser.next_char()
-            )),
-        }
+    fn consume_value(&mut self) -> String {
+        let value = self.parser.consume_while(|c| c != ';');
+        self.parser.consume_expected_text(";").unwrap();
+        value
     }
 
     fn consume_identifier(&mut self) -> String {

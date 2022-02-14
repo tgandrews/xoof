@@ -4,6 +4,7 @@ mod cssom;
 mod document;
 mod dom;
 mod entry;
+mod layout;
 mod parser;
 mod styling;
 

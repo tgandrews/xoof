@@ -1,4 +1,5 @@
 use super::dom::*;
+use std::cmp::Ordering;
 
 #[derive(Clone)]
 pub struct StyleSheet {
@@ -21,7 +22,32 @@ pub struct Selector {
     pub selector_type: SelectorType,
 }
 
-pub type Specificity = (usize, usize, usize);
+pub struct Specificity {
+    id: usize,
+    classes: usize,
+    tags: usize,
+}
+
+impl Specificity {
+    //  TODO: Hold the position in the document as that should also be used
+    pub fn cmp<'a>(&'a self, comparator: &'a Specificity) -> (Ordering, &Specificity) {
+        if &self.id < &comparator.id {
+            (Ordering::Less, comparator)
+        } else if &self.id > &comparator.id {
+            (Ordering::Greater, comparator)
+        } else if &self.classes < &comparator.classes {
+            (Ordering::Less, comparator)
+        } else if &self.classes > &comparator.classes {
+            (Ordering::Greater, comparator)
+        } else if &self.tags < &comparator.tags {
+            (Ordering::Less, comparator)
+        } else if &self.tags > &comparator.tags {
+            (Ordering::Greater, comparator)
+        } else {
+            (Ordering::Equal, comparator)
+        }
+    }
+}
 
 impl Selector {
     pub fn specificity(&self) -> Specificity {
@@ -30,7 +56,7 @@ impl Selector {
                 let id = simple.id.iter().count();
                 let classes = simple.class.len();
                 let tags = simple.tag_name.iter().count();
-                (id, classes, tags)
+                Specificity { id, classes, tags }
             }
         }
     }
@@ -70,25 +96,5 @@ pub struct SimpleSelectorData {
 #[derive(Clone, Debug)]
 pub struct Declaration {
     pub name: String,
-    pub value: Value,
+    pub value: String,
 }
-
-#[derive(Clone, Debug)]
-pub enum Value {
-    // Keyword(String),
-    Length(f32, Unit),
-    // ColorValue(Color),
-}
-
-#[derive(Clone, Copy, Debug)]
-pub enum Unit {
-    Px,
-}
-
-// #[derive(Clone, Copy)]
-// pub struct Color {
-//     r: u8,
-//     g: u8,
-//     b: u8,
-//     a: u8,
-// }
