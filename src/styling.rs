@@ -1,26 +1,32 @@
+use std::collections::HashMap;
+
 use cssom::*;
 use dom::*;
 
-pub fn apply_styling(dom: &Node, style_sheet: &StyleSheet) -> Node {
+pub(crate) type PropertyMap = HashMap<String, String>;
+pub(crate) struct StyledNode<'a> {
+    node: &'a Node, // pointer to a DOM node
+    specified_values: PropertyMap,
+    children: Vec<StyledNode<'a>>,
+}
+
+pub(crate) fn apply_styling<'a>(dom: &'a Node, style_sheet: &StyleSheet) -> StyledNode<'a> {
     let rules = &style_sheet.rules;
     style_node(dom, rules)
 }
 
-fn style_node(node: &Node, rules: &Vec<Rule>) -> Node {
-    match &node.node_type {
-        NodeType::Element(element_data) => Node {
-            node_type: NodeType::Element(ElementData {
-                tag_name: element_data.tag_name.clone(),
-                attributes: element_data.attributes.clone(),
-                style_values: build_style(&element_data, &rules),
-            }),
-            children: node
-                .children
-                .iter()
-                .map(|child| style_node(child, &rules))
-                .collect(),
+fn style_node<'a>(node: &'a Node, rules: &Vec<Rule>) -> StyledNode<'a> {
+    StyledNode {
+        node,
+        specified_values: match node.node_type {
+            NodeType::Element(ref element) => build_style(element, &rules),
+            _ => PropertyMap::new(),
         },
-        _ => node.clone(),
+        children: node
+            .children
+            .iter()
+            .map(|child| style_node(child, &rules))
+            .collect(),
     }
 }
 

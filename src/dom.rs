@@ -10,8 +10,6 @@ pub enum NodeType {
     Text(String),
 }
 
-pub type PropertyMap = HashMap<String, String>;
-
 #[derive(Debug, Clone)]
 pub struct Node {
     pub children: Vec<Node>,
@@ -46,7 +44,6 @@ impl Node {
                     first = false;
                 }
                 output.push_str("} ");
-                output.push_str(format!("Style {:#?}", elem.style_values).as_str());
                 output
             }
         };
@@ -67,7 +64,6 @@ impl Node {
 pub struct ElementData {
     pub tag_name: String,
     pub attributes: AttrMap,
-    pub style_values: PropertyMap,
 }
 
 impl ElementData {
@@ -81,16 +77,11 @@ impl ElementData {
             None => HashSet::new(),
         }
     }
-
-    pub fn get_style_value(&self, name: &str) -> Option<String> {
-        self.style_values.get(name).map(|v| v.clone())
-    }
 }
 
 #[derive(Debug, Clone)]
 pub struct TextData {
     pub text: String,
-    pub style_values: PropertyMap,
 }
 
 #[derive(Debug, Clone)]
@@ -134,7 +125,6 @@ pub fn element(name: String, attrs: AttrMap, children: Vec<Node>) -> Node {
         node_type: NodeType::Element(ElementData {
             tag_name: name,
             attributes: attrs,
-            style_values: HashMap::new(),
         }),
     }
 }

@@ -4,15 +4,22 @@ use styling;
 
 use parser::*;
 
-pub fn create_document(html_source: String, css_source: String) -> Document {
+pub fn create_document(html_source: String, css_source: String) -> Document<'static> {
     let mut warnings = vec![];
-    let dom = html_parser::parse(html_source, &mut warnings);
+    let nodes = html_parser::parse(html_source, &mut warnings);
     let style_sheet = css_parser::parse(css_source, &mut warnings);
 
+    let root_node = nodes.first().unwrap();
+
     let mut document = Document {
-        dom: dom.first().unwrap().clone(),
-        style_sheet,
+        dom: root_node,
+        style_tree: styling::StyledNode {
+            children: vec![],
+            node: root_node,
+            specified_values: styling::PropertyMap::new(),
+        },
         warnings,
+        style_sheet,
     };
 
     document.on_document_changed();
@@ -20,15 +27,16 @@ pub fn create_document(html_source: String, css_source: String) -> Document {
     return document;
 }
 
-pub struct Document {
-    pub dom: dom::Node,
+pub struct Document<'a> {
+    pub dom: &'a dom::Node,
+    pub style_tree: styling::StyledNode<'a>,
     pub style_sheet: cssom::StyleSheet,
     pub warnings: Vec<String>,
 }
 
-impl Document {
+impl Document<'_> {
     pub fn on_document_changed(&mut self) {
-        self.dom = styling::apply_styling(&self.dom, &self.style_sheet);
+        self.style_tree = styling::apply_styling(&self.dom, &self.style_sheet);
     }
 
     pub fn dump_dom_tree(&self) -> String {
